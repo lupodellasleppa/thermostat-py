@@ -27,14 +27,24 @@ relay_pins = [
 
 class Relay(object):
 
-    def __init__(self, relay_pin):
+    def __init__(self, pin):
         '''
-        relay_pins is a global list of dicts
+        Only pin is a necessary argument.
+
+        pin is looked up as relay_pins['channel'], whereas relay_pins
+        is a mapping with all other additional information
+        [
+          {
+            'channel': pin,
+            'direction': GPIO.<IN|OUT>,
+            'initial': GPIO.<LOW|HIGH>
+          }
+        ]
         '''
 
-        self.pin = relay_pin
+        self.pin = pin
         self.stats_path = '/home/pi/raspb-scripts/stats.json'
-        
+
         GPIO.setmode(GPIO.BOARD)
 
         if os.path.isfile(self.stats_path):
@@ -56,13 +66,14 @@ class Relay(object):
             self.stats['relay_state'] = 'on'
 
             if self.write_stats(self.stats) == self.stats:
-                logger.info("Channel {} on.".format(self.pin))
+                logger.info("Turned on channel {}.".format(self.pin))
             else:
                 logger.warning("Fault while writing stats.")
 
         else:
             logger.warning(
-                "Was already set to on. Shutting down and restarting..."
+                "Channel {} as already set to on."
+                " Shutting down and restarting...".format(self.pin)
             )
             self.off()
             self.catch_sleep(1)
@@ -76,7 +87,7 @@ class Relay(object):
             self.stats['relay_state'] = 'off'
 
             if self.write_stats(self.stats) == self.stats:
-                logger.info("Channel {} off.".format(self.pin))
+                logger.info("Turned off channel {}.".format(self.pin))
             else:
                 logger.warning("Fault while writing stats.")
 
