@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     relay = Relay(36)
     relay.on()
-        while True:
-            time.sleep(1)
+    while True:
+        time.sleep(1)
         # relay.off()
         # time.sleep(1)
