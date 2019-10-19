@@ -6,4 +6,4 @@ User=pi
 Type=idle
 Restart=no
 Environment="MAX_TIME=%I"
-ExecStart=/usr/bin/python3 /home/pi/raspb-scripts/relay.py $MAX_TIME
+ExecStart=/usr/bin/python3 /home/pi/raspb-scripts/heater_control.py $MAX_TIME
