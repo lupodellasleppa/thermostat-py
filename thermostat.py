@@ -14,6 +14,10 @@ relay_pins = [
     }
 ]
 
+signals = {
+    signal.SIGTERM, signal.SIGSEGV, signal.SIGINT
+}
+
 
 class Relay(object):
 
@@ -34,6 +38,10 @@ class Relay(object):
 
     def on(self):
 
+        signal.signal.(signal.SIGINT, self.signal_handler)
+        signal.signal.(signal.SIGSEGV, self.signal_handler)
+        signal.signal.(signal.SIGTERM, self.signal_handler)
+
         GPIO.output(self.pin, GPIO.LOW)
 
 
@@ -42,12 +50,22 @@ class Relay(object):
         GPIO.output(self.pin, GPIO.HIGH)
 
 
+    def clean():
+
+        GPIO.cleanup()
+
+
+    def signal_handler(self, sig_number, sig_handler):
+
+        if sig_number in signals:
+            self.clean()
+
+
 if __name__ == '__main__':
 
     relay = Relay(36)
-    for i in range(3):
+    while True
         relay.on()
-        time.sleep(1)
-        relay.off()
-        time.sleep(1)
-    GPIO.cleanup()
+        # time.sleep(1)
+        # relay.off()
+        # time.sleep(1)
