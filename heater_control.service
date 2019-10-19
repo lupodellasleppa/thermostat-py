@@ -1,5 +1,5 @@
 [Unit]
-Description=Remotely control heater service
+Description=heater service control
 
 [Service]
 User=pi
