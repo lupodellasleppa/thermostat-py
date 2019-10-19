@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import RPi.GPIO as GPIO
 import signal
 import time
@@ -9,6 +10,8 @@ import time
 
 logger_name = 'thermostat'
 logger = logging.getLogger(logger_name)
+
+stats_path = '/home/pi/raspb-scripts/stats.json'
 
 relay_pins = [
     {
@@ -32,7 +35,10 @@ class Relay(object):
 
         GPIO.setmode(GPIO.BOARD)
 
-        self.stats = read_stats()
+        if os.path.isfile(stats_path):
+            self.stats = read_stats()
+        else:
+            write_stats({'relay_state': 'clean'})
 
         for relay in relay_pins:
 
@@ -100,7 +106,7 @@ class Relay(object):
 
 def read_stats():
 
-    with open('/home/pi/raspb-scripts/stats.json') as f:
+    with open(stats_path) as f:
         stats = json.load(f)
 
     return stats
@@ -111,7 +117,7 @@ def write_stats(new_stat):
     Writes new stats to file then reads the file again and returns it.
     '''
 
-    with open('/home/pi/raspb-scripts/stats.json', 'w') as f:
+    with open(stats_path, 'w') as f:
         logger.info(
             "Wrote {} characters into stats.json file".format(
                 f.write(json.dumps(new_stat))
