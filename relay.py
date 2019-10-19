@@ -9,7 +9,12 @@ import time
 
 
 logger_name = 'thermostat'
+logging.basicConfig(
+    format='{levelname:<8} {asctime} - {message}',
+    style='{'
+)
 logger = logging.getLogger(logger_name)
+logger.setLevel(logging.INFO)
 
 stats_path = '/home/pi/raspb-scripts/stats.json'
 
@@ -104,7 +109,7 @@ def write_stats(new_stat):
     '''
 
     with open(stats_path, 'w') as f:
-        logger.info(
+        logger.debug(
             "Wrote {} characters into stats.json file".format(
                 f.write(json.dumps(new_stat))
             )
