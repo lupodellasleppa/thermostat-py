@@ -8,6 +8,7 @@ import time
 
 
 logger_name = 'thermostat'
+logger = logging.getLogger(logger_name)
 
 relay_pins = [
     {
@@ -29,10 +30,13 @@ class Relay(object):
         relay_pins is a global list of dicts
         '''
 
+        signal.signal(signal.SIGINT, self.signal_handler)
+        signal.signal(signal.SIGSEGV, self.signal_handler)
+        signal.signal(signal.SIGTERM, self.signal_handler)
+
         GPIO.setmode(GPIO.BOARD)
 
-        with open('/home/pi/raspb-scripts/stats.json') as f:
-            self.stats = json.load(f)
+        self.stats = read_stats()
 
         for relay in relay_pins:
 
@@ -40,28 +44,26 @@ class Relay(object):
                 GPIO.setup(**relay)
 
         self.pin = relay_pin
-        self.logger = logging.getLogger(logger_name)
-
 
     def on(self):
-
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGSEGV, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.signal_handler)
 
         if self.stats['relay_state'] != 'on':
             GPIO.output(self.pin, GPIO.LOW)
 
             self.stats['relay_state'] = 'on'
 
-            with open('/home/pi/raspb-scripts/stats.json', 'w') as f:
-                f.write(json.dumps(self.stats))
-
-            self.logger.info("Channel {} on.".format(self.pin))
+            if write_stats(self.stats) == self.stats:
+                logger.info("Channel {} on.".format(self.pin))
+            else:
+                logger.warning("Fault while writing stats.")
 
         else:
-            self.logger.info("Channel {} was already on.".format(self.pin))
-
+            logger.warning(
+                "Was already set to on. Shutting down and restarting..."
+            )
+            self.off()
+            time.sleep(1)
+            self.on()
 
     def off(self):
 
@@ -70,14 +72,13 @@ class Relay(object):
 
             self.stats['relay_state'] = 'off'
 
-            with open('/home/pi/raspb-scripts/stats.json', 'w') as f:
-                f.write(json.dumps(self.stats))
-
-            self.logger.info("Channel {} off.".format(self.pin))
+            if write_stats(self.stats) == self.stats:
+                logger.info("Channel {} off.".format(self.pin))
+            else:
+                logger.warning("Fault while writing stats.")
 
         else:
-            self.logger.info("Channel {} was already off.".format(self.pin))
-
+            logger.info("Channel {} was already off.".format(self.pin))
 
     def clean(self):
 
@@ -85,11 +86,10 @@ class Relay(object):
 
         self.stats['relay_state'] = 'clean'
 
-        with open('/home/pi/raspb-scripts/stats.json', 'w') as f:
-            f.write(json.dumps(self.stats))
-
-        self.logger.info("Cleaned up all channels.")
-        raise SystemExit
+        if write_stats(self.stats) == self.stats:
+            logger.info("Cleaned up all channels.")
+        else:
+            logger.warning("Fault while writing stats.")
 
 
     def signal_handler(self, sig_number, sig_handler):
@@ -98,7 +98,36 @@ class Relay(object):
             self.clean()
 
 
+def read_stats():
+
+    with open('/home/pi/raspb-scripts/stats.json') as f:
+        stats = json.load(f)
+
+    return stats
+
+
+def write_stats(new_stat):
+    '''
+    Writes new stats to file then reads the file again and returns it.
+    '''
+
+    with open('/home/pi/raspb-scripts/stats.json', 'w') as f:
+        logger.info(
+            "Wrote {} characters into stats.json file".format(
+                f.write(json.dumps(new_stat))
+            )
+        )
+
+    return read_stats()
+
+
 def turn_heater_on(max_time=3600):
+    '''
+    Main function to turn the heater on.
+
+    :param max_time: Is the maximum time the heater will be on,
+                    after which it will turn itself off automatically.
+    '''
 
     relay = Relay(36)
     relay.on()
