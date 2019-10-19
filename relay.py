@@ -107,4 +107,11 @@ def turn_heater_on(max_time=3600):
 
 
 if __name__ == '__main__':
-    turn_heater_on()
+    import sys
+
+    max_time = 3600
+
+    if len(sys.argv) > 1:
+        max_time = sys.argv[1]
+
+    turn_heater_on(max_time)
