@@ -1,0 +1,12 @@
+
+# put this in sudo nano /lib/systemd/system/heater_control.service
+# sudo chmod 644 /lib/systemd/system/heater_control.service
+# sudo systemctl daemon-reload
+[Unit]
+Description=Remotely control heater service
+
+[Service]
+User=pi
+Type=idle
+Restart=no
+ExecStart=/usr/bin/python3 /home/pi/raspb-scripts/relay.py

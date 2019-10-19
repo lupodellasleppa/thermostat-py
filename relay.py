@@ -1,10 +1,13 @@
 #!/usr/bin/python3
 
 import json
+import logging
 import RPi.GPIO as GPIO
 import signal
 import time
 
+
+logger_name = 'thermostat'
 
 relay_pins = [
     {
@@ -37,6 +40,7 @@ class Relay(object):
                 GPIO.setup(**relay)
 
         self.pin = relay_pin
+        self.logger = logging.getLogger(logger_name)
 
 
     def on(self):
@@ -53,10 +57,10 @@ class Relay(object):
             with open('stats.json', 'w') as f:
                 f.write(json.dumps(self.stats))
 
-            print("Channel {} on.".format(self.pin))
+            logger.info("Channel {} on.".format(self.pin))
 
         else:
-            print("Channel {} was already on.".format(self.pin))
+            logger.info("Channel {} was already on.".format(self.pin))
 
 
     def off(self):
@@ -69,22 +73,22 @@ class Relay(object):
             with open('stats.json', 'w') as f:
                 f.write(json.dumps(self.stats))
 
-            print("Channel {} off.".format(self.pin))
+            logger.info("Channel {} off.".format(self.pin))
 
         else:
-            print("Channel {} was already off.".format(self.pin))
+            logger.info("Channel {} was already off.".format(self.pin))
 
 
     def clean(self):
 
-        GPIO.cleanup()
+        GPIO.cleanup(self.pin)
 
         self.stats['relay_state'] = 'clean'
 
         with open('stats.json', 'w') as f:
             f.write(json.dumps(self.stats))
 
-        print("Cleaned up all channels.")
+        logger.info("Cleaned up all channels.")
         raise SystemExit
 
 
@@ -94,11 +98,13 @@ class Relay(object):
             self.clean()
 
 
-if __name__ == '__main__':
+def turn__heater_on(max_time):
 
     relay = Relay(36)
     relay.on()
-    while True:
-        time.sleep(1)
-        # relay.off()
-        # time.sleep(1)
+    time.sleep(3600)
+    relay.clean()
+
+
+if __name__ == '__main__':
+    turn__heater_on()
