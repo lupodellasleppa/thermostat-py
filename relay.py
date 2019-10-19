@@ -112,9 +112,15 @@ if __name__ == '__main__':
     max_time = 3600
 
     if len(sys.argv) > 1:
-        if isinstance(sys.argv[1], int):
+        try:
             max_time = int(sys.argv[1])
-        else:
-            raise ValueError("Argument must be an integer.")
+        except ValueError as e:
+            content = e.args[0]
+            invalid = content[content.find(':')+2:]
+            raise ValueError(
+                "Argument cannot be interpreted as an integer: {}".format(
+                    invalid
+                )
+            )
 
     turn_heater_on(max_time)
