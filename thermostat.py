@@ -28,6 +28,9 @@ class Relay(object):
 
         GPIO.setmode(GPIO.BOARD)
 
+        with open('stats.json') as f:
+            self.stats = json.load(stats)
+
         for relay in relay_pins:
 
             if relay['channel'] == relay_pin:
@@ -42,13 +45,27 @@ class Relay(object):
         signal.signal(signal.SIGSEGV, self.signal_handler)
         signal.signal(signal.SIGTERM, self.signal_handler)
 
-        GPIO.output(self.pin, GPIO.LOW)
+        if self.stats['relay_state'] != 'on':
+            GPIO.output(self.pin, GPIO.LOW)
+
+        self.stats['relay_state'] = 'on'
+
+        with open('stats.json', 'w') as f:
+            f.write(json.dumps(self.stats))
+
         print("Channel {} on.".format(self.pin))
 
 
     def off(self):
 
-        GPIO.output(self.pin, GPIO.HIGH)
+        if self.stats['relay_state'] != 'off':
+            GPIO.output(self.pin, GPIO.HIGH)
+
+        self.stats['relay_state'] = 'off'
+
+        with open('stats.json', 'w') as f:
+            f.write(json.dumps(self.stats))
+
         print("Channel {} off.".format(self.pin))
 
 
