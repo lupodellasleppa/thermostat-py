@@ -12,7 +12,7 @@ def turn_heater_on(max_time=3600):
 
     heater_switch = Relay(36)
     heater_switch.on()
-    catch_sleep(max_time)
+    heater_switch.catch_sleep(max_time)
     heater_switch.clean()
 
 

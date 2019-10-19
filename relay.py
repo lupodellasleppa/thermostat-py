@@ -32,9 +32,12 @@ class Relay(object):
         relay_pins is a global list of dicts
         '''
 
+        self.pin = relay_pin
+        self.stats_path = '/home/pi/raspb-scripts/stats.json'
+        
         GPIO.setmode(GPIO.BOARD)
 
-        if os.path.isfile(stats_path):
+        if os.path.isfile(self.stats_path):
             self.stats = self.read_stats()
         else:
             self.stats = self.write_stats({'relay_state': 'clean'})
@@ -44,8 +47,6 @@ class Relay(object):
             if relay['channel'] == relay_pin:
                 GPIO.setup(**relay)
 
-        self.pin = relay_pin
-        self.stats_path = '/home/pi/raspb-scripts/stats.json'
 
     def on(self):
 
