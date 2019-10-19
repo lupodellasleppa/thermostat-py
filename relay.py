@@ -98,13 +98,13 @@ class Relay(object):
             self.clean()
 
 
-def turn__heater_on(max_time):
+def turn_heater_on(max_time=3600):
 
     relay = Relay(36)
     relay.on()
-    time.sleep(3600)
+    time.sleep(max_time)
     relay.clean()
 
 
 if __name__ == '__main__':
-    turn__heater_on()
+    turn_heater_on()
