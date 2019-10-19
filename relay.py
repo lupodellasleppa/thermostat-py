@@ -112,6 +112,9 @@ if __name__ == '__main__':
     max_time = 3600
 
     if len(sys.argv) > 1:
-        max_time = sys.argv[1]
+        if isinstance(sys.argv[1], int):
+            max_time = int(sys.argv[1])
+        else:
+            raise ValueError("Argument must be an integer.")
 
     turn_heater_on(max_time)
