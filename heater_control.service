@@ -1,8 +1,0 @@
-[Unit]
-Description=heater service control
-
-[Service]
-User=pi
-Type=idle
-Restart=no
-ExecStart=/usr/bin/python3 /home/pi/raspb-scripts/relay.py
