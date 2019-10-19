@@ -48,12 +48,15 @@ class Relay(object):
         if self.stats['relay_state'] != 'on':
             GPIO.output(self.pin, GPIO.LOW)
 
-        self.stats['relay_state'] = 'on'
+            self.stats['relay_state'] = 'on'
 
-        with open('stats.json', 'w') as f:
-            f.write(json.dumps(self.stats))
+            with open('stats.json', 'w') as f:
+                f.write(json.dumps(self.stats))
 
-        print("Channel {} on.".format(self.pin))
+            print("Channel {} on.".format(self.pin))
+
+        else:
+            print("Channel {} was already on.".format(self.pin))
 
 
     def off(self):
@@ -61,17 +64,26 @@ class Relay(object):
         if self.stats['relay_state'] != 'off':
             GPIO.output(self.pin, GPIO.HIGH)
 
-        self.stats['relay_state'] = 'off'
+            self.stats['relay_state'] = 'off'
 
-        with open('stats.json', 'w') as f:
-            f.write(json.dumps(self.stats))
+            with open('stats.json', 'w') as f:
+                f.write(json.dumps(self.stats))
 
-        print("Channel {} off.".format(self.pin))
+            print("Channel {} off.".format(self.pin))
+
+        else:
+            print("Channel {} was already off.".format(self.pin))
 
 
     def clean(self):
 
         GPIO.cleanup()
+
+        self.stats['relay_state'] = 'clean'
+
+        with open('stats.json', 'w') as f:
+            f.write(json.dumps(self.stats))
+
         print("Cleaned up all channels.")
         raise SystemExit
 
