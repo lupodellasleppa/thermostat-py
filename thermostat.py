@@ -68,8 +68,8 @@ class Relay(object):
 if __name__ == '__main__':
 
     relay = Relay(36)
-    while True:
-        relay.on()
-        # time.sleep(1)
+    relay.on()
+        while True:
+            time.sleep(1)
         # relay.off()
         # time.sleep(1)
