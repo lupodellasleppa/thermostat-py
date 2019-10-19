@@ -57,10 +57,10 @@ class Relay(object):
             with open('/home/pi/raspb-scripts/stats.json', 'w') as f:
                 f.write(json.dumps(self.stats))
 
-            logger.info("Channel {} on.".format(self.pin))
+            self.logger.info("Channel {} on.".format(self.pin))
 
         else:
-            logger.info("Channel {} was already on.".format(self.pin))
+            self.logger.info("Channel {} was already on.".format(self.pin))
 
 
     def off(self):
@@ -73,10 +73,10 @@ class Relay(object):
             with open('/home/pi/raspb-scripts/stats.json', 'w') as f:
                 f.write(json.dumps(self.stats))
 
-            logger.info("Channel {} off.".format(self.pin))
+            self.logger.info("Channel {} off.".format(self.pin))
 
         else:
-            logger.info("Channel {} was already off.".format(self.pin))
+            self.logger.info("Channel {} was already off.".format(self.pin))
 
 
     def clean(self):
@@ -88,7 +88,7 @@ class Relay(object):
         with open('/home/pi/raspb-scripts/stats.json', 'w') as f:
             f.write(json.dumps(self.stats))
 
-        logger.info("Cleaned up all channels.")
+        self.logger.info("Cleaned up all channels.")
         raise SystemExit
 
 
