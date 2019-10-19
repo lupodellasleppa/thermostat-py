@@ -34,7 +34,7 @@ class Relay(object):
         if os.path.isfile(stats_path):
             self.stats = read_stats()
         else:
-            write_stats({'relay_state': 'clean'})
+            self.stats = write_stats({'relay_state': 'clean'})
 
         for relay in relay_pins:
 
@@ -113,7 +113,7 @@ def write_stats(new_stat):
     return read_stats()
 
 
-def signal_handler(self, sig_number, sig_handler):
+def signal_handler(sig_number, sig_handler):
     '''
     Signal handler cleans GPIOs on trigger and exits
     '''
@@ -132,9 +132,9 @@ def catch_sleep(seconds):
     Wrapper for time.sleep() catching signals.
     '''
 
-    signal.signal(signal.SIGINT, self.signal_handler)
-    signal.signal(signal.SIGSEGV, self.signal_handler)
-    signal.signal(signal.SIGTERM, self.signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGSEGV, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     time.sleep(seconds)
 
