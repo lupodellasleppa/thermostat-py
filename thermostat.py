@@ -50,9 +50,11 @@ class Relay(object):
         GPIO.output(self.pin, GPIO.HIGH)
 
 
-    def clean():
+    def clean(self):
 
         GPIO.cleanup()
+        print("Cleaned up all channels.")
+        raise SystemExit
 
 
     def signal_handler(self, sig_number, sig_handler):
