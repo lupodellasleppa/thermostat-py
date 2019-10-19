@@ -21,10 +21,6 @@ relay_pins = [
     }
 ]
 
-signals = {
-    signal.SIGTERM, signal.SIGSEGV, signal.SIGINT
-}
-
 
 class Relay(object):
 
@@ -49,10 +45,6 @@ class Relay(object):
 
     def on(self):
 
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGSEGV, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.signal_handler)
-
         if self.stats['relay_state'] != 'on':
             GPIO.output(self.pin, GPIO.LOW)
 
@@ -68,7 +60,7 @@ class Relay(object):
                 "Was already set to on. Shutting down and restarting..."
             )
             self.off()
-            time.sleep(1)
+            catch_sleep(1)
             self.on()
 
     def off(self):
@@ -98,12 +90,6 @@ class Relay(object):
             logger.warning("Fault while writing stats.")
 
 
-    def signal_handler(self, sig_number, sig_handler):
-
-        if sig_number in signals:
-            self.clean()
-
-
 def read_stats():
 
     with open(stats_path) as f:
@@ -127,6 +113,32 @@ def write_stats(new_stat):
     return read_stats()
 
 
+def signal_handler(self, sig_number, sig_handler):
+    '''
+    Signal handler cleans GPIOs on trigger and exits
+    '''
+
+    signals = {
+        signal.SIGTERM, signal.SIGSEGV, signal.SIGINT
+    }
+
+    if sig_number in signals:
+        self.clean()
+        raise SystemExit
+
+
+def catch_sleep(seconds):
+    '''
+    Wrapper for time.sleep() catching signals.
+    '''
+
+    signal.signal(signal.SIGINT, self.signal_handler)
+    signal.signal(signal.SIGSEGV, self.signal_handler)
+    signal.signal(signal.SIGTERM, self.signal_handler)
+
+    time.sleep(seconds)
+
+
 def turn_heater_on(max_time=3600):
     '''
     Main function to turn the heater on.
@@ -137,7 +149,7 @@ def turn_heater_on(max_time=3600):
 
     relay = Relay(36)
     relay.on()
-    time.sleep(max_time)
+    catch_sleep(max_time)
     relay.clean()
 
 
