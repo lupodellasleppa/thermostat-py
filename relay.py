@@ -123,7 +123,7 @@ def signal_handler(sig_number, sig_handler):
     }
 
     if sig_number in signals:
-        self.clean()
+        heater_switch.clean()
         raise SystemExit
 
 
@@ -147,10 +147,12 @@ def turn_heater_on(max_time=3600):
                     after which it will turn itself off automatically.
     '''
 
-    relay = Relay(36)
-    relay.on()
+    heater_switch.on()
     catch_sleep(max_time)
-    relay.clean()
+    heater_switch.clean()
+
+# Needs to be declared in global for signal handling to work
+heater_switch = Relay(36)
 
 
 if __name__ == '__main__':
