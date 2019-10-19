@@ -43,11 +43,13 @@ class Relay(object):
         signal.signal(signal.SIGTERM, self.signal_handler)
 
         GPIO.output(self.pin, GPIO.LOW)
+        print("Channel {} on.".format(self.pin))
 
 
     def off(self):
 
         GPIO.output(self.pin, GPIO.HIGH)
+        print("Channel {} off.".format(self.pin))
 
 
     def clean(self):
