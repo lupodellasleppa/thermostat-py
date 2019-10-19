@@ -31,7 +31,7 @@ class Relay(object):
 
         GPIO.setmode(GPIO.BOARD)
 
-        with open('stats.json') as f:
+        with open('/home/pi/raspb-scripts/stats.json') as f:
             self.stats = json.load(f)
 
         for relay in relay_pins:
@@ -54,7 +54,7 @@ class Relay(object):
 
             self.stats['relay_state'] = 'on'
 
-            with open('stats.json', 'w') as f:
+            with open('/home/pi/raspb-scripts/stats.json', 'w') as f:
                 f.write(json.dumps(self.stats))
 
             logger.info("Channel {} on.".format(self.pin))
@@ -70,7 +70,7 @@ class Relay(object):
 
             self.stats['relay_state'] = 'off'
 
-            with open('stats.json', 'w') as f:
+            with open('/home/pi/raspb-scripts/stats.json', 'w') as f:
                 f.write(json.dumps(self.stats))
 
             logger.info("Channel {} off.".format(self.pin))
@@ -85,7 +85,7 @@ class Relay(object):
 
         self.stats['relay_state'] = 'clean'
 
-        with open('stats.json', 'w') as f:
+        with open('/home/pi/raspb-scripts/stats.json', 'w') as f:
             f.write(json.dumps(self.stats))
 
         logger.info("Cleaned up all channels.")
