@@ -30,10 +30,6 @@ class Relay(object):
         relay_pins is a global list of dicts
         '''
 
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGSEGV, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.signal_handler)
-
         GPIO.setmode(GPIO.BOARD)
 
         self.stats = read_stats()
@@ -46,6 +42,10 @@ class Relay(object):
         self.pin = relay_pin
 
     def on(self):
+
+        signal.signal(signal.SIGINT, self.signal_handler)
+        signal.signal(signal.SIGSEGV, self.signal_handler)
+        signal.signal(signal.SIGTERM, self.signal_handler)
 
         if self.stats['relay_state'] != 'on':
             GPIO.output(self.pin, GPIO.LOW)
