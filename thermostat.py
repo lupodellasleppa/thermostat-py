@@ -29,7 +29,7 @@ class Relay(object):
         GPIO.setmode(GPIO.BOARD)
 
         with open('stats.json') as f:
-            self.stats = json.load(stats)
+            self.stats = json.load(f)
 
         for relay in relay_pins:
 
