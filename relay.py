@@ -139,6 +139,7 @@ class Relay(object):
         }
 
         if sig_number in signals:
+            self.stop()
             self.clean()
             raise SystemExit
 
