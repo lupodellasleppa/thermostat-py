@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-self.days_of_week = {
+days_of_week = {
     0: "monday",
     1: "tuesday",
     2: "wednesday",
