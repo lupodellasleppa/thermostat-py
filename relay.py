@@ -156,7 +156,7 @@ class Relay(object):
             }
 
             if sig_number in off_signals:
-                self.stop()
+                self.off()
                 self.clean()
                 raise SystemExit
             elif sig_number in usr_signals:
