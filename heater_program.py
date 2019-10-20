@@ -30,7 +30,7 @@ class Program(object):
                 program_example = json.load(r)
             program_example = {"0": program_example}
             with open(self.program_path, 'w') as w:
-                f.write(program_example)
+                w.write(program_example)
 
         self.program = self.load_program(program_number)
 
