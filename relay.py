@@ -106,9 +106,10 @@ class Relay(object):
 
         GPIO.cleanup(int(self.pin))
 
-        self.stats[self.pin] = False
-
-        if self.write_stats(self.stats) == self.stats:
+        stats = self.read_stats()
+        stats[self.pin] = False
+        wrote_stats = self.write_stats(stats)
+        if wrote_stats == self.stats:
             logger.info("Cleaned up all channels.")
         else:
             logger.warning("Fault while writing stats.")
