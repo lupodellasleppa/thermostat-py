@@ -1,6 +1,50 @@
 #!/usr/bin/python3
 
+import argparse
+import datetime
 from relay import Relay
+
+
+def get_max_time():
+    '''
+    Uses argparse to get desidered time in total_seconds()
+    '''
+
+    parser = argparse.ArgumentParser(description='Start heater.')
+
+    parser.add_argument(
+        '-h', '--hours',
+        help='Number of hours.',
+        type=int,
+        default=0
+    )
+    parser.add_argument(
+        '-m', '--minutes',
+        help='Number of minutes.',
+        type=int,
+        default=0
+    )
+    parser.add_argument(
+        '-h', '--seconds',
+        help='Number of seconds.',
+        type=int,
+        default=0
+    )
+
+    args = parser.parse_args()
+
+    max_time = datetime.timedelta(
+        hours=args.hours,
+        minutes=args.minutes,
+        seconds=args.seconds
+    ).total_seconds()
+
+    if not max_time:
+        parser.error(
+            "Please insert at least one between hours, minutes or seconds."
+        )
+
+    return max_time
 
 
 def turn_heater_on(max_time=3600):
@@ -19,20 +63,6 @@ def turn_heater_on(max_time=3600):
 
 
 if __name__ == '__main__':
-    import sys
 
-    max_time = 3600
-
-    if len(sys.argv) > 1:
-        try:
-            max_time = int(sys.argv[1])
-        except ValueError as e:
-            content = e.args[0]
-            invalid = content[content.find(':')+2:]
-            raise ValueError(
-                "Argument cannot be interpreted as an integer: {}".format(
-                    invalid
-                )
-            )
-
+    max_time = get_max_time()
     turn_heater_on(max_time)
