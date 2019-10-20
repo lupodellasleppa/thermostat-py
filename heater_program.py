@@ -28,7 +28,7 @@ class Program(object):
         if not os.path.isfile(self.program_path):
             with open(self.program_example_path) as r:
                 program_example = json.load(r)
-            program_example = {"0": program_exaple}
+            program_example = {"0": program_example}
             with open(self.program_path, 'w') as w:
                 f.write(program_example)
 
