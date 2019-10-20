@@ -87,12 +87,14 @@ class Relay(object):
 
     def off(self):
 
-        if self.stats[self.pin]:
+        stats = self.read_stats()
+        if stats[self.pin]:
             GPIO.output(int(self.pin), GPIO.HIGH)
 
-            self.stats[self.pin] = False
+            stats[self.pin] = False
+            wrote_stats = self.write_stats(stats)
 
-            if self.write_stats(self.stats) == self.stats:
+            if wrote_stats == self.stats:
                 logger.info("Turned off channel {}.".format(self.pin))
             else:
                 logger.warning("Fault while writing stats.")
