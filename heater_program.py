@@ -37,8 +37,14 @@ class Program(object):
     def load_program(self, program_number):
 
         program = self.read_program()
-
-        return program['program_number']
+        try:
+            program_number = int(program_number)
+        except ValueError:
+            raise ValueError("Value for 'program_number' must be a number")
+        try:
+            return program[str(program_number)]
+        except ValueError as e:
+            raise e
 
     def edit_program(self, program_number, day, hour, value):
         '''
