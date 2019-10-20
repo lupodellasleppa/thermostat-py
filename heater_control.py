@@ -13,19 +13,19 @@ def get_max_time():
     parser = argparse.ArgumentParser(description='Start heater.')
 
     parser.add_argument(
-        '-h', '--hours',
+        '-H', '--hours',
         help='Number of hours.',
         type=int,
         default=0
     )
     parser.add_argument(
-        '-m', '--minutes',
+        '-M', '--minutes',
         help='Number of minutes.',
         type=int,
         default=0
     )
     parser.add_argument(
-        '-h', '--seconds',
+        '-S', '--seconds',
         help='Number of seconds.',
         type=int,
         default=0
