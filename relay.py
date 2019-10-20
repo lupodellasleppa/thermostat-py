@@ -109,7 +109,7 @@ class Relay(object):
         stats = self.read_stats()
         stats[self.pin] = False
         wrote_stats = self.write_stats(stats)
-        if wrote_stats == self.stats:
+        if wrote_stats == stats:
             logger.info("Cleaned up all channels.")
         else:
             logger.warning("Fault while writing stats.")
