@@ -5,7 +5,7 @@ while [ $1 ];do
     'auto' )
       MODE=$1
       PROGRAM_NUMBER=$2
-      shift
+      shift 2
       ;;
     'manual' )
       MODE=$1
