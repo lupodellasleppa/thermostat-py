@@ -5,5 +5,5 @@ Description=heater service control
 User=pi
 Type=idle
 Restart=no
-Environment="MAX_TIME=%I"
-ExecStart=/usr/bin/python3 /home/pi/raspb-scripts/heater_control.py $MAX_TIME
+Environment="ARGS=%I"
+ExecStart=/usr/bin/python3 /home/pi/raspb-scripts/heater_control.py $ARGS
