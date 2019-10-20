@@ -86,7 +86,7 @@ def main():
         'program',
         help='Program number to start.',
         type=int,
-        default=None
+        nargs='?'
     )
 
     args = parser.parse_args()
