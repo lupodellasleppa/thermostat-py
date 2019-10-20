@@ -85,7 +85,7 @@ def main():
     parser.add_argument(
         'program',
         help='Program number to start.',
-        type=int,
+        type=str,
         nargs='?'
     )
 

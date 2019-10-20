@@ -55,7 +55,7 @@ class Relay(object):
 
         for relay in relay_pins:
 
-            if relay['channel'] == self.pin:
+            if relay['channel'] == int(self.pin):
                 GPIO.setup(**relay)
 
 
@@ -63,7 +63,7 @@ class Relay(object):
 
         stats = self.read_stats()
         if not stats[self.pin]:
-            GPIO.output(self.pin, GPIO.LOW)
+            GPIO.output(int(self.pin), GPIO.LOW)
 
             stats[self.pin] = True
 
@@ -88,7 +88,7 @@ class Relay(object):
     def off(self):
 
         if self.stats[self.pin]:
-            GPIO.output(self.pin, GPIO.HIGH)
+            GPIO.output(int(self.pin), GPIO.HIGH)
 
             self.stats[self.pin] = False
 
@@ -102,7 +102,7 @@ class Relay(object):
 
     def clean(self):
 
-        GPIO.cleanup(self.pin)
+        GPIO.cleanup(int(self.pin))
 
         self.stats[self.pin] = False
 
