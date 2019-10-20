@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import datetime
 import json
 import logging
 import os
@@ -129,28 +130,39 @@ class Relay(object):
         return self.read_stats()
 
 
-    def signal_handler(self, sig_number, sig_handler):
-        '''
-        Signal handler cleans GPIOs on trigger and exits
-        '''
-
-        signals = {
-            signal.SIGTERM, signal.SIGSEGV, signal.SIGINT
-        }
-
-        if sig_number in signals:
-            self.stop()
-            self.clean()
-            raise SystemExit
-
-
     def catch_sleep(self, seconds):
         '''
         Wrapper for time.sleep() catching signals.
         '''
 
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGSEGV, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.signal_handler)
+        s = time.time()
+
+        def signal_handler(sig_number, sig_handler):
+            '''
+            Signal handler cleans GPIOs on trigger and exits
+            '''
+
+            off_signals = {
+                signal.SIGTERM, signal.SIGSEGV, signal.SIGINT
+            }
+
+            usr_signals = {
+                signal.SIGUSR1
+            }
+
+            if sig_number in off_signals:
+                self.stop()
+                self.clean()
+                raise SystemExit
+            elif sig_number in usr_signals:
+                e = time.time()
+                d = e - s
+                d = datetime.timedelta(seconds=round(d))
+                logger.info("Heater has been on for {}".format(str(d)))
+
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGSEGV, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGUSR1, signal_handler)
 
         time.sleep(seconds)
