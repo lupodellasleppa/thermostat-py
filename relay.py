@@ -54,7 +54,7 @@ class Relay(object):
 
         for relay in relay_pins:
 
-            if relay['channel'] == relay_pin:
+            if relay['channel'] == self.pin:
                 GPIO.setup(**relay)
 
 
