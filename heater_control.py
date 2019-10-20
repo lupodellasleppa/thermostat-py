@@ -35,7 +35,7 @@ def turn_heater_on(mode, program_number=0):
 
     assert mode in {'auto', 'manual'}
 
-    heater_switch = Relay(36)
+    heater_switch = Relay('36')
 
     if mode == 'auto':
         # load program
