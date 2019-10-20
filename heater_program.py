@@ -105,7 +105,7 @@ class Program(object):
 
         program = read_program()
         latest_program = int(max(
-            str(k) for k in program.keys(), key=lambda x: int(x)
+            [str(k) for k in program.keys()], key=lambda x: int(x)
         ))
         with open(self.program_example_path) as f:
             example_program = json.load(f)
