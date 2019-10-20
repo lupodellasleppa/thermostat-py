@@ -32,7 +32,7 @@ def turn_heater_on(mode, program_number=0):
         # load program
         program = Program(program_number)
 
-        def get_now(program):
+        def get_now():
 
             current_time = datetime.datetime.now()
             current_day = program.days_of_week[current_time.weekday()]
