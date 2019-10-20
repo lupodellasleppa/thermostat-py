@@ -2,6 +2,7 @@
 
 from relay import Relay
 
+
 def turn_heater_on(max_time=3600):
     '''
     Main function to turn the heater on.
@@ -13,6 +14,7 @@ def turn_heater_on(max_time=3600):
     heater_switch = Relay(36)
     heater_switch.on()
     heater_switch.catch_sleep(max_time)
+    heater_switch.off()
     heater_switch.clean()
 
 
