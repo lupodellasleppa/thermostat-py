@@ -79,7 +79,7 @@ def main():
         'mode',
         help='Heater mode [auto|manual].',
         type=str,
-        required=True
+        default='auto'
     )
 
     parser.add_argument(
