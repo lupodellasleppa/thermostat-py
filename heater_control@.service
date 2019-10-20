@@ -6,4 +6,4 @@ User=pi
 Type=idle
 Restart=no
 Environment="ARGS=%I"
-ExecStart=/usr/bin/python3 /home/pi/raspb-scripts/heater_control.py $ARGS
+ExecStart=/bin/sh /home/pi/raspb-scripts/main.sh $ARGS
