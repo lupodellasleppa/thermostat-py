@@ -14,4 +14,4 @@ while [ $1 ];do
   esac
 done
 
-/usr/bin/python3 /home/pi/raspb-scripts/home_control.py $MODE $PROGRAM_NUMBER
+/usr/bin/python3 /home/pi/raspb-scripts/heater_control.py $MODE $PROGRAM_NUMBER
