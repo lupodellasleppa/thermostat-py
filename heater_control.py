@@ -5,6 +5,7 @@ import datetime
 from heater_program import Program
 import logging
 from relay import Relay
+import util
 
 
 logger_name = 'thermostat'
@@ -14,6 +15,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(logger_name)
 logger.setLevel(logging.INFO)
+
+
+def get_now():
+
+    current_time = datetime.datetime.now()
+    current_day = util.days_of_week[current_time.weekday()]
+    current_hour = str(current_time.hour)
+
+    return current_day, current_hour
 
 
 def turn_heater_on(mode, program_number=0):
@@ -29,18 +39,9 @@ def turn_heater_on(mode, program_number=0):
     heater_switch = Relay('36')
 
     if mode == 'auto':
-        # load program
-        program = Program(program_number)
-
-        def get_now():
-
-            current_time = datetime.datetime.now()
-            current_day = program.days_of_week[current_time.weekday()]
-            current_hour = str(current_time.hour)
-
-            return current_day, current_hour
-
         while True:
+            # load program
+            program = Program(program_number)
             # check each loop for when we are in history
             current_day, current_hour = get_now()
             if ( # if current day and hour is True in program

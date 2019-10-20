@@ -2,21 +2,12 @@
 
 import json
 import os
+import util
 
 
 class Program(object):
 
     def __init__(self, program_number):
-
-        self.days_of_week = {
-            0: "monday",
-            1: "tuesday",
-            2: "wednesday",
-            3: "thursday",
-            4: "friday",
-            5: "saturday",
-            6: "sunday"
-        }
 
         repo_path = '/home/pi/raspb-scripts'
 
@@ -93,7 +84,7 @@ class Program(object):
         for d in day:
             d = d.lower().replace(' ', '')
             # check day
-            assert d in self.days_of_week.values(), invalid_day_message
+            assert d in util.days_of_week.values(), invalid_day_message
             for h in hour:
                 # check hour
                 assert h in {str(el) for el in range(24)}, invalid_hour_message
