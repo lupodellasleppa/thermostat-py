@@ -76,15 +76,15 @@ def main():
     )
 
     parser.add_argument(
-        '-m', '--mode',
+        'mode',
         help='Heater mode [auto|manual].',
         type=str,
         required=True
     )
 
     parser.add_argument(
-        '-p', '--program',
-        help='Program number to start.'
+        'program',
+        help='Program number to start.',
         type=int,
         default=None
     )

@@ -79,7 +79,8 @@ class Program(object):
             raise KeyError("Could not find specified program number.")
 
         # edit the configuration
-        for d.lower().replace(' ', '') in day:
+        for d in day:
+            d = d.lower().replace(' ', '')
             # check day
             assert d in self.days_of_week.values(), invalid_day_message
             for h in hour:
