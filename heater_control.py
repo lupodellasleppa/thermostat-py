@@ -16,15 +16,6 @@ logger = logging.getLogger(logger_name)
 logger.setLevel(logging.INFO)
 
 
-def get_now():
-
-    current_time = datetime.datetime.now()
-    current_day = program.days_of_week[current_time.weekday()]
-    current_hour = current_time.hour
-
-    return current_day, current_hour
-
-
 def turn_heater_on(mode, program_number=0):
     '''
     Main function to turn the heater on.
@@ -39,19 +30,28 @@ def turn_heater_on(mode, program_number=0):
 
     if mode == 'auto':
         # load program
-        program = Program(program_number).program
+        program = Program(program_number)
+
+        def get_now(program):
+
+            current_time = datetime.datetime.now()
+            current_day = program.days_of_week[current_time.weekday()]
+            current_hour = current_time.hour
+
+            return current_day, current_hour
+
         while True:
             # check each loop for when we are in history
             current_day, current_hour = get_now()
             if ( # if current day and hour is True in program
-                program[current_day][current_hour] and
+                program.program[current_day][current_hour] and
                 # and heater not on
                 not heater_switch.stats
             ):
                 # start it
                 heater_switch.on()
             elif ( # if otherwise day and hour is False
-                not program[current_day][current_hour] and
+                not program.program[current_day][current_hour] and
                 # but heater is on
                 heater_switch.stats
             ):
