@@ -18,7 +18,7 @@ class Program(object):
             6: "sunday"
         }
 
-        repo_path = '/home/pi/raspb-scripts/'
+        repo_path = '/home/pi/raspb-scripts'
 
         self.program_path = os.path.join(repo_path, 'program.json')
         self.program_example_path = os.path.join(
@@ -28,7 +28,9 @@ class Program(object):
         if not os.path.isfile(self.program_path):
             with open(self.program_example_path) as r:
                 program_example = json.load(r)
-            program_example = {"0": program_example}
+            program_example = {"0": program_exaple}
+            with open(self.program_path, 'w') as w:
+                f.write(program_example)
 
         self.program = self.load_program(program_number)
 
