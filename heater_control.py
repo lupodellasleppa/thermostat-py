@@ -36,7 +36,7 @@ def turn_heater_on(mode, program_number=0):
 
             current_time = datetime.datetime.now()
             current_day = program.days_of_week[current_time.weekday()]
-            current_hour = current_time.hour
+            current_hour = str(current_time.hour)
 
             return current_day, current_hour
 
