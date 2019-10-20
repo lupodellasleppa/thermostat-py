@@ -49,9 +49,9 @@ class Relay(object):
         GPIO.setmode(GPIO.BOARD)
 
         if os.path.isfile(self.stats_path):
-            self.stats = self.read_stats()
+            self.stats = self.read_stats()[self.pin]
         else:
-            self.stats = self.write_stats({'relay_state': 'clean'})
+            self.stats = self.write_stats({self.pin: False})
 
         for relay in relay_pins:
 
@@ -61,12 +61,15 @@ class Relay(object):
 
     def on(self):
 
-        if self.stats['relay_state'] != 'on':
+        stats = self.read_stats()
+        if not stats[self.pin]:
             GPIO.output(self.pin, GPIO.LOW)
 
-            self.stats['relay_state'] = 'on'
+            stats[self.pin] = True
 
-            if self.write_stats(self.stats) == self.stats:
+            wrote_stats = self.write_stats(stats)
+
+            if wrote_stats == stats:
                 logger.info("Turned on channel {}.".format(self.pin))
             else:
                 logger.warning("Fault while writing stats.")
@@ -80,12 +83,14 @@ class Relay(object):
             self.catch_sleep(1)
             self.on()
 
+        return self.stats = wrote_stats[self.pin]
+
     def off(self):
 
-        if self.stats['relay_state'] != 'off':
+        if self.stats[self.pin]:
             GPIO.output(self.pin, GPIO.HIGH)
 
-            self.stats['relay_state'] = 'off'
+            self.stats[self.pin] = False
 
             if self.write_stats(self.stats) == self.stats:
                 logger.info("Turned off channel {}.".format(self.pin))
@@ -99,7 +104,7 @@ class Relay(object):
 
         GPIO.cleanup(self.pin)
 
-        self.stats['relay_state'] = 'clean'
+        self.stats[self.pin] = False
 
         if self.write_stats(self.stats) == self.stats:
             logger.info("Cleaned up all channels.")
@@ -107,7 +112,7 @@ class Relay(object):
             logger.warning("Fault while writing stats.")
 
 
-    def read_stats(self, ):
+    def read_stats(self):
 
         with open(self.stats_path) as f:
             stats = json.load(f)
@@ -115,7 +120,7 @@ class Relay(object):
         return stats
 
 
-    def write_stats(self, new_stat):
+    def write_stats(self, new_stats):
         '''
         Writes new stats to file then reads the file again and returns it.
         '''
@@ -123,7 +128,7 @@ class Relay(object):
         with open(self.stats_path, 'w') as f:
             logger.debug(
                 "Wrote {} characters into stats.json file".format(
-                    f.write(json.dumps(new_stat))
+                    f.write(json.dumps(new_stats))
                 )
             )
 
