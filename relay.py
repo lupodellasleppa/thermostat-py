@@ -83,7 +83,7 @@ class Relay(object):
             self.catch_sleep(1)
             self.on()
 
-        return self.stats = wrote_stats[self.pin]
+        self.stats = wrote_stats[self.pin]
 
     def off(self):
 
