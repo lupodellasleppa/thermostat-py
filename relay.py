@@ -96,7 +96,7 @@ class Relay(object):
             wrote_stats = self.write_stats(stats)
 
             if wrote_stats == stats:
-                logger.info(f"Turned OFF channel {self.pin}."
+                logger.info(f"Turned OFF channel {self.pin}.")
             else:
                 logger.warning("Fault while writing stats.")
 
