@@ -15,7 +15,7 @@ logging.basicConfig(
     style='{'
 )
 logger = logging.getLogger(logger_name)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 relay_pins = [
     {
