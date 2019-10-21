@@ -24,8 +24,21 @@ def get_now():
     current_time = datetime.datetime.now()
     current_day = util.days_of_week[current_time.weekday()]
     current_hour = str(current_time.hour)
+    current_minute = str(current_time.minute)
+    current_second = str(current_time.second)
+    current_total_seconds = datetime.timedelta(
+        hours=current_hour,
+        minutes=current_minute,
+        seconds=current_second
+    ).total_seconds()
 
-    return current_day, current_hour
+    return {
+        "day": current_day,
+        "hours": current_hour,
+        "minutes": current_minute,
+        "seconds": current_second,
+        "total_seconds": current_total_seconds
+    }
 
 
 def turn_heater_on(mode, program_number=0):
@@ -44,14 +57,25 @@ def turn_heater_on(mode, program_number=0):
         # init the counter for time the heater has been on
         time_elapsed = 0
         while True:
+            time_to_wait = 300
             # load program
             program = Program(program_number)
             logger.debug(f"Loaded program {program_number}.")
             # check each loop for when we are in history
-            current_day, current_hour = get_now()
-            logger.debug(f"It is {current_hour} on {current_day}.")
+            current = get_now()
+            logger.debug(
+                f"It is { # get formatted current time
+                str(datetime.timedelta(seconds=current['total_seconds']))
+                } on {current['day']}."
+            )
+            to_reach_five = current['minutes'] % 5
+            to_reach_sixty = current['seconds'] % 60
+            if to_reach_five:
+                time_to_wait -= to_reach_five * 60
+            if to_reach_sixty:
+                time_to_wait -= to_reach_sixty
             if ( # if current day and hour is True in program
-                program.program[current_day][current_hour] and
+                program.program[current['day']][current['hours']] and
                 # and heater not on
                 not heater_switch.stats
             ):
@@ -61,7 +85,7 @@ def turn_heater_on(mode, program_number=0):
                 logger.debug("Received signal to turn heater ON.")
                 time_elapsed = time.time()
             elif ( # if otherwise day and hour is False
-                not program.program[current_day][current_hour] and
+                not program.program[current['day']][current['hours']] and
                 # but heater is on
                 heater_switch.stats
             ):
@@ -70,12 +94,12 @@ def turn_heater_on(mode, program_number=0):
                 logger.debug("Received signal to turn heater OFF.")
                 time_elapsed = 0
             # finally, wait for 5 minutes
-            heater_switch.catch_sleep(300, time_elapsed)
+            heater_switch.catch_sleep(time_to_wait, time_elapsed)
     else:
         while True:
             if not heater_switch.stats:
                 heater_switch.on()
-            heater_switch.catch_sleep(300)
+            heater_switch.catch_sleep(3600)
 
 
 def main():
