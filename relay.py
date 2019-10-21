@@ -83,7 +83,7 @@ class Relay(object):
             self.catch_sleep(1)
             self.on()
 
-        self.stats = wrote_stats[self.pin]
+        self.update_stats()
 
     def off(self):
 
@@ -102,6 +102,8 @@ class Relay(object):
         else:
             logger.info("Channel {} was already off.".format(self.pin))
 
+        self.update_stats()
+
     def clean(self):
 
         GPIO.cleanup(int(self.pin))
@@ -110,10 +112,11 @@ class Relay(object):
         stats[self.pin] = False
         wrote_stats = self.write_stats(stats)
         if wrote_stats == stats:
-            logger.info("Cleaned up all channels.")
+            logger.info(f"Cleaned up channel {self.pin}.")
         else:
             logger.warning("Fault while writing stats.")
 
+        self.update_stats()
 
     def read_stats(self):
 
@@ -137,6 +140,9 @@ class Relay(object):
 
         return self.read_stats()
 
+    def update_stats(self, new_stats):
+
+        self.stats = new_stats[self.pin]
 
     def catch_sleep(self, seconds):
         '''
