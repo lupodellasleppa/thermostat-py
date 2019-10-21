@@ -45,7 +45,7 @@ def turn_heater_on(mode, program_number=0):
             logger.debug(f"Loaded program {program_number}.")
             # check each loop for when we are in history
             current_day, current_hour = get_now()
-            logger.debug(f"It is {current_day} on {current_hour}.")
+            logger.debug(f"It is {current_hour} on {current_day}.")
             if ( # if current day and hour is True in program
                 program.program[current_day][current_hour] and
                 # and heater not on
@@ -62,7 +62,7 @@ def turn_heater_on(mode, program_number=0):
             ):
                 # stop it
                 heater_switch.off()
-                logger.debug("Received signal to turn on heater.")
+                logger.debug("Received signal to turn off heater.")
             # finally, wait for 5 minutes
             heater_switch.catch_sleep(300)
     else:
