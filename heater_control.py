@@ -64,7 +64,7 @@ def turn_heater_on(mode, program_number=0):
             # check each loop for when we are in history
             current = get_now()
             logger.debug(
-                f"It is { # get formatted current time
+                f"It is {
                 str(datetime.timedelta(seconds=current['total_seconds']))
                 } on {current['day']}."
             )
