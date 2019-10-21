@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+import datetime
+
+
 days_of_week = {
     0: "monday",
     1: "tuesday",
