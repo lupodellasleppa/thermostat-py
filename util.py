@@ -16,7 +16,7 @@ days_of_week = {
 def get_now():
 
     current_time = datetime.datetime.now()
-    current_day = util.days_of_week[current_time.weekday()]
+    current_day = days_of_week[current_time.weekday()]
     current_hour = current_time.hour
     current_minute = current_time.minute
     current_second = current_time.second
