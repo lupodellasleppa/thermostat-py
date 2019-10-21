@@ -32,7 +32,7 @@ def turn_heater_on(mode, program_number=0):
     heater_switch = Relay('36')
 
     if mode == 'auto':
-        # init the counter for time the heater has been on
+        # init the counter at zero as soon as controller starts
         time_elapsed = 0
         while True:
             time_to_wait = 300
@@ -44,34 +44,17 @@ def turn_heater_on(mode, program_number=0):
             logger.debug(
                 f"It is {current['formatted']} on {current['day'].title()}."
             )
-            to_reach_five = current['minutes'] % 5
-            to_reach_sixty = current['seconds'] % 60
-            if to_reach_five:
-                time_to_wait -= to_reach_five * 60
-            if to_reach_sixty:
-                time_to_wait -= to_reach_sixty
-            if ( # if current day and hour is True in program
-                program.program[current['day']][str(current['hours'])] and
-                # and heater not on
-                not heater_switch.stats
-            ):
-                # start it
-                logger.debug(f"{heater_switch.stats}")
-                heater_switch.on()
-                logger.debug("Received signal to turn heater ON.")
-                time_elapsed = time.time()
-            elif ( # if otherwise day and hour is False
-                not program.program[current['day']][str(current['hours'])] and
-                # but heater is on
-                heater_switch.stats
-            ):
-                # stop it
-                heater_switch.off()
-                logger.debug("Received signal to turn heater OFF.")
-                time_elapsed = 0
+            # compensate waiting time
+            time_to_wait = util.five_o(current['minutes'], current['seconds'])
+            # relay vs program relation
+            time_elapsed = util.program_vs_relay(
+                program.program[current['day']][str(current['hours'])],
+                heater_switch,
+                time_elapsed
+            )
             # finally, wait for 5 minutes
             heater_switch.catch_sleep(time_to_wait, time_elapsed)
-    else:
+    else: # manual mode
         while True:
             if not heater_switch.stats:
                 heater_switch.on()
