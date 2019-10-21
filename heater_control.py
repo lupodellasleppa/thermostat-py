@@ -2,10 +2,12 @@
 
 import argparse
 import datetime
-from heater_program import Program
 import logging
-from relay import Relay
+import time
 import util
+
+from heater_program import Program
+from relay import Relay
 
 
 logger_name = 'thermostat'
@@ -39,6 +41,8 @@ def turn_heater_on(mode, program_number=0):
     heater_switch = Relay('36')
 
     if mode == 'auto':
+        # init the counter for time the heater has been on
+        time_elapsed = 0
         while True:
             # load program
             program = Program(program_number)
@@ -54,7 +58,8 @@ def turn_heater_on(mode, program_number=0):
                 # start it
                 logger.debug(f"{heater_switch.stats}")
                 heater_switch.on()
-                logger.debug("Received signal to turn on heater.")
+                logger.debug("Received signal to turn heater ON.")
+                time_elapsed = time.time()
             elif ( # if otherwise day and hour is False
                 not program.program[current_day][current_hour] and
                 # but heater is on
@@ -62,9 +67,10 @@ def turn_heater_on(mode, program_number=0):
             ):
                 # stop it
                 heater_switch.off()
-                logger.debug("Received signal to turn off heater.")
+                logger.debug("Received signal to turn heater OFF.")
+                time_elapsed = 0
             # finally, wait for 5 minutes
-            heater_switch.catch_sleep(300)
+            heater_switch.catch_sleep(300, time_elapsed)
     else:
         while True:
             if not heater_switch.stats:
