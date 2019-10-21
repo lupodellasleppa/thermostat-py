@@ -19,28 +19,6 @@ logger = logging.getLogger(logger_name)
 logger.setLevel(logging.DEBUG)
 
 
-def get_now():
-
-    current_time = datetime.datetime.now()
-    current_day = util.days_of_week[current_time.weekday()]
-    current_hour = str(current_time.hour)
-    current_minute = str(current_time.minute)
-    current_second = str(current_time.second)
-    current_total_seconds = datetime.timedelta(
-        hours=current_hour,
-        minutes=current_minute,
-        seconds=current_second
-    ).total_seconds()
-
-    return {
-        "day": current_day,
-        "hours": current_hour,
-        "minutes": current_minute,
-        "seconds": current_second,
-        "total_seconds": current_total_seconds
-    }
-
-
 def turn_heater_on(mode, program_number=0):
     '''
     Main function to turn the heater on.
@@ -62,11 +40,9 @@ def turn_heater_on(mode, program_number=0):
             program = Program(program_number)
             logger.debug(f"Loaded program {program_number}.")
             # check each loop for when we are in history
-            current = get_now()
-            logger.debug("It is {} on {}.".format(
-                str(datetime.timedelta(seconds=current['total_seconds'])),
-                current['day']
-            )
+            current = util.get_now()
+            logger.debug(
+                f"It is {current['formatted']} on {current['day']}."
             )
             to_reach_five = current['minutes'] % 5
             to_reach_sixty = current['seconds'] % 60
@@ -75,7 +51,7 @@ def turn_heater_on(mode, program_number=0):
             if to_reach_sixty:
                 time_to_wait -= to_reach_sixty
             if ( # if current day and hour is True in program
-                program.program[current['day']][current['hours']] and
+                program.program[current['day']][str(current['hours'])] and
                 # and heater not on
                 not heater_switch.stats
             ):
@@ -85,7 +61,7 @@ def turn_heater_on(mode, program_number=0):
                 logger.debug("Received signal to turn heater ON.")
                 time_elapsed = time.time()
             elif ( # if otherwise day and hour is False
-                not program.program[current['day']][current['hours']] and
+                not program.program[current['day']][str(current['hours'])] and
                 # but heater is on
                 heater_switch.stats
             ):
