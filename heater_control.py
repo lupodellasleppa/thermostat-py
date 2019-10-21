@@ -42,7 +42,7 @@ def turn_heater_on(mode, program_number=0):
             # check each loop for when we are in history
             current = util.get_now()
             logger.debug(
-                f"It is {current['formatted']} on {current['day']}."
+                f"It is {current['formatted']} on {current['day'].title()}."
             )
             to_reach_five = current['minutes'] % 5
             to_reach_sixty = current['seconds'] % 60

@@ -70,7 +70,7 @@ class Relay(object):
             wrote_stats = self.write_stats(stats)
 
             if wrote_stats == stats:
-                logger.info("Turned ON channel {}.".format(self.pin))
+                logger.info(f"Turned ON channel {self.pin}.")
             else:
                 logger.warning("Fault while writing stats.")
 
@@ -78,8 +78,8 @@ class Relay(object):
 
         else:
             logger.warning(
-                "Channel {} as already set to ON."
-                " Shutting down and restarting...".format(self.pin)
+                f"Channel {self.pin} was already set to ON."
+                " Shutting down and restarting..."
             )
             self.off()
             self.catch_sleep(1)
@@ -96,14 +96,14 @@ class Relay(object):
             wrote_stats = self.write_stats(stats)
 
             if wrote_stats == stats:
-                logger.info("Turned OFF channel {}.".format(self.pin))
+                logger.info(f"Turned OFF channel {self.pin}."
             else:
                 logger.warning("Fault while writing stats.")
 
             self.update_stats(wrote_stats)
 
         else:
-            logger.info("Channel {} was already OFF.".format(self.pin))
+            logger.info(f"Channel {self.pin} was already OFF.")
 
 
     def clean(self):
@@ -136,11 +136,8 @@ class Relay(object):
         '''
 
         with open(self.stats_path, 'w') as f:
-            logger.debug(
-                "Wrote {} characters into stats.json file".format(
-                    f.write(json.dumps(new_stats))
-                )
-            )
+            n = f.write(json.dumps(new_stats))
+            logger.debug(f"Wrote {n} characters into stats.json file")
 
         return self.read_stats()
 
@@ -175,9 +172,9 @@ class Relay(object):
                     e = time.time()
                     d = e - time_elapsed
                     d = datetime.timedelta(seconds=round(d))
-                    logger.info("Heater has been ON for {}".format(str(d)))
+                    logger.info(f"Heater has been ON for {str(d)}")
                 else:
-                    logger.info("Heater is OFF.".format(str(d)))
+                    logger.info("Heater is OFF.")
 
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGSEGV, signal_handler)
