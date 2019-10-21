@@ -83,7 +83,7 @@ class Relay(object):
             self.catch_sleep(1)
             self.on()
 
-        self.update_stats()
+        self.update_stats(wrote_stats)
 
     def off(self):
 
@@ -102,7 +102,7 @@ class Relay(object):
         else:
             logger.info("Channel {} was already off.".format(self.pin))
 
-        self.update_stats()
+        self.update_stats(wrote_stats)
 
     def clean(self):
 
@@ -116,7 +116,7 @@ class Relay(object):
         else:
             logger.warning("Fault while writing stats.")
 
-        self.update_stats()
+        self.update_stats(wrote_stats)
 
     def read_stats(self):
 
