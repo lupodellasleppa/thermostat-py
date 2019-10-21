@@ -63,10 +63,10 @@ def turn_heater_on(mode, program_number=0):
             logger.debug(f"Loaded program {program_number}.")
             # check each loop for when we are in history
             current = get_now()
-            logger.debug(
-                f"It is {
-                str(datetime.timedelta(seconds=current['total_seconds']))
-                } on {current['day']}."
+            logger.debug("It is {} on {}.".format(
+                str(datetime.timedelta(seconds=current['total_seconds'])),
+                current['day']
+            )
             )
             to_reach_five = current['minutes'] % 5
             to_reach_sixty = current['seconds'] % 60
