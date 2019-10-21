@@ -14,7 +14,7 @@ logging.basicConfig(
     style='{'
 )
 logger = logging.getLogger(logger_name)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 def get_now():
@@ -42,15 +42,19 @@ def turn_heater_on(mode, program_number=0):
         while True:
             # load program
             program = Program(program_number)
+            logger.debug(f"Loaded program {program_number}.")
             # check each loop for when we are in history
             current_day, current_hour = get_now()
+            logger.debug(f"It is {current_day} on {current_hour}.")
             if ( # if current day and hour is True in program
                 program.program[current_day][current_hour] and
                 # and heater not on
                 not heater_switch.stats
             ):
                 # start it
+                logger.debug(f"{heater_switch.stats}")
                 heater_switch.on()
+                logger.debug("Received signal to turn on heater.")
             elif ( # if otherwise day and hour is False
                 not program.program[current_day][current_hour] and
                 # but heater is on
@@ -58,6 +62,7 @@ def turn_heater_on(mode, program_number=0):
             ):
                 # stop it
                 heater_switch.off()
+                logger.debug("Received signal to turn on heater.")
             # finally, wait for 5 minutes
             heater_switch.catch_sleep(300)
     else:
