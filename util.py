@@ -69,7 +69,7 @@ def five_o(minutes, seconds, microseconds):
     # compensate seconds
     time_to_wait -= seconds
     # compensate microseconds
-    to_reach_thousand -= float(f"0.{microseconds}")
+    time_to_wait -= float(f"0.{microseconds}")
 
     return time_to_wait
 
