@@ -33,10 +33,6 @@ def get_now():
     '''
 
     current_time = datetime.datetime.now()
-    current_day = days_of_week[current_time.weekday()]
-    current_hour = current_time.hour
-    current_minute = current_time.minute
-    current_second = current_time.second
     current_total_seconds = datetime.timedelta(
         hours=current_hour,
         minutes=current_minute,
@@ -44,10 +40,11 @@ def get_now():
     ).total_seconds()
 
     return {
-        "day": current_day,
-        "hours": current_hour,
-        "minutes": current_minute,
-        "seconds": current_second,
+        "day": days_of_week[current_time.weekday()],
+        "hours": current_time.hour,
+        "minutes": current_time.minute,
+        "seconds": current_time.second,
+        "microseconds": current_time.microsecond,
         "total_seconds": current_total_seconds,
         "formatted": str(datetime.timedelta(
             seconds=round(current_total_seconds)
@@ -55,7 +52,7 @@ def get_now():
     }
 
 
-def five_o(minutes, seconds):
+def five_o(minutes, seconds, microseconds):
     '''
     Stay on the clock by compensating waiting time.
     '''
@@ -65,8 +62,9 @@ def five_o(minutes, seconds):
     to_reach_five = minutes % 5
     time_to_wait -= to_reach_five * 60
     # compensate seconds
-    to_reach_sixty = seconds % 60
-    time_to_wait -= to_reach_sixty
+    time_to_wait -= seconds
+    # compensate microseconds
+    to_reach_thousand -= float(f"0.{microseconds}") 
 
     return time_to_wait
 
