@@ -2,6 +2,7 @@
 
 import datetime
 import logging
+import time
 
 
 logger_name = 'thermostat'
