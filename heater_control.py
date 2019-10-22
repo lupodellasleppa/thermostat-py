@@ -45,7 +45,9 @@ def turn_heater_on(mode, program_number=0):
                 f"It is {current['formatted']} on {current['day'].title()}."
             )
             # compensate waiting time
-            time_to_wait = util.five_o(current['minutes'], current['seconds'])
+            time_to_wait = util.five_o(
+                current['minutes'], current['seconds'], current['microseconds']
+            )
             # relay vs program relation
             time_elapsed = util.program_vs_relay(
                 program.program[current['day']][str(current['hours'])],
