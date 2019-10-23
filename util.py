@@ -57,19 +57,22 @@ def get_now():
     }
 
 
-def five_o(minutes, seconds, microseconds):
+def five_o(minutes=0, seconds=0, microseconds=0):
     '''
     Stay on the clock by compensating waiting time.
     '''
 
     time_to_wait = 300
-    # compensate minutes
-    to_reach_five = minutes % 5
-    time_to_wait -= to_reach_five * 60
-    # compensate seconds
-    time_to_wait -= seconds
-    # compensate microseconds
-    time_to_wait -= float(f"0.{microseconds}")
+    if minutes:
+        # compensate minutes
+        to_reach_five = minutes % 5
+        time_to_wait -= to_reach_five * 60
+    if seconds:
+        # compensate seconds
+        time_to_wait -= seconds
+    if microseconds:
+        # compensate microseconds
+        time_to_wait -= float(f"0.{microseconds:0>6}")
 
     return time_to_wait
 
