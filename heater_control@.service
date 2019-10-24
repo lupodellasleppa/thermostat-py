@@ -7,4 +7,4 @@ Type=idle
 Restart=no
 Environment="ARGS=%I"
 ExecStart=/bin/sh /home/pi/raspb-scripts/main.sh $ARGS
-ExecStopPost=/bin/sleep 1.5; if [ -f /home/pi/raspb-scripts/stats.json ] && [ ! -s /home/pi/raspb-scripts/stats.json ]; then rm stats.json; fi
+ExecStopPost=/bin/sleep 1

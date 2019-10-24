@@ -165,7 +165,9 @@ class Relay(object):
 
             if sig_number in off_signals:
                 self.off()
+                logger.debug(f"Turned off channel {self.pin}")
                 self.clean()
+                logger.debug(f"Cleaned channel {self.pin}")
                 raise SystemExit
             elif sig_number in usr_signals:
                 if time_elapsed:
