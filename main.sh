@@ -11,6 +11,10 @@ while [ $1 ];do
       MODE=$1
       shift
       ;;
+    * )
+      echo "Not a recognized parameter for service."
+      exit 1
+      ;;
   esac
 done
 
