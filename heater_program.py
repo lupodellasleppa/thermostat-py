@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import argparse
 import json
 import os
 
@@ -94,12 +95,12 @@ class Program(object):
 
         self.write_program(program)
 
-    def add_program(mode='new', program_to_copy=None):
+    def add_program(mode='new', program_number=None):
 
         assert mode in {'new', 'copy'}, "Only 'new' and 'copy' modes allowed"
 
-        invalid_program_to_copy_message = (
-            "An number must be assigned to program_to_copy"
+        invalid_program_number_message = (
+            "An number must be assigned to program_number"
             " when mode='copy' is set."
         )
 
@@ -111,23 +112,27 @@ class Program(object):
             example_program = json.load(f)
 
         if mode == 'new':
-            program[str(latest_program + 1)] = example_program
-            write_program(program)
+            if program_number is None:
+                program[str(latest_program + 1)] = example_program
+                write_program(program)
+            else:
+                program[program_number] = example_program
+                write_program(program)
         else:
-            assert program_to_copy is not None and isinstance(
-                program_to_copy, int
-            ), invalid_program_to_copy_message
+            assert program_number is not None and isinstance(
+                program_number, int
+            ), invalid_program_number_message
             try:
                 program[str(latest_program + 1)] = program[
-                    str(program_to_copy)
+                    str(program_number)
                 ]
             except ValueError:
-                raise ValueError(invalid_program_to_copy_message)
+                raise ValueError(invalid_program_number_message)
 
             write_program(program)
 
-
-    def read_program(self):
+    @static_method
+    def read_program():
 
         with open(self.program_path) as f:
             program = json.load(f)
@@ -138,3 +143,119 @@ class Program(object):
 
         with open(self.program_path, 'w') as f:
             f.write(json.dumps(program))
+
+
+def main():
+
+    parser = argparse.ArgumentParser(
+        description=(
+            'Edit thermostat program.'
+        )
+    )
+    # does't need other params, but will be more specific if provided
+    parser.add_argument(
+        '-r', '--read',
+        help='To check at a program without editing.',
+        type=bool,
+        default=False
+    )
+    # needs day and hour (can be lists)
+    parser.add_argument(
+        '-e', '--edit',
+        help='Edit a program.',
+        type=bool,
+        default=False
+    )
+    # does not require params. Doesn't care about day or hour
+    parser.add_argument(
+        '-a', '--add',
+        help='Add a new program from scratch.',
+        type=bool,
+        default=False
+    )
+    # requires program number. Doesn't care about day or hour
+    parser.add_argument(
+        '-c', '--copy',
+        help='Create a new program copying configuration from a previous one.',
+        type=bool,
+        default=False
+    )
+
+    parser.add_argument(
+        '-p', '--program',
+        help='Choose a program number to edit.',
+        type=str,
+        default=None
+    )
+
+    parser.add_argument(
+        '-d', '--day',
+        help='Enter the days of the week you wish to edit.',
+        type=str,
+        nargs='+'
+    )
+
+    parser.add_argument(
+        '-H', '--hour',
+        help='Enter the hours you wish to edit.',
+        type=str,
+        nargs='+'
+    )
+
+    args = parser.parse_args
+
+    program_read = read_program()
+    existing_programs = set(program.keys())
+
+    if not args.add:
+
+        if not args.read:
+            assert args.program is not None, "Please enter a program number."
+            assert args.program in existing_programs, (
+                "Not a valid program number."
+            )
+
+        if not args.copy:
+            # add and copy don't care about day or hour
+            if not args.day:
+                args.day = list(util.days_of_week.values())
+            if not args.hour:
+                args.hour = list(range(24))
+
+    elif args.add:
+
+        assert args.program not in existing_programs, "Program already exists."
+
+
+    if args.read:
+        return _read(args.program, args.day, args.hour)
+
+
+
+
+def _read(program_number, day, hour):
+
+    res = ''
+
+    if not program_number:
+        return program_read
+
+    program = Program(program_number)
+
+    for day in day:
+        for hour in hour:
+            res += template(program_number, day, hour)
+
+
+def template(program=True):
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+
+    main()
