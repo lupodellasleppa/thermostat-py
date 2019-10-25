@@ -30,10 +30,10 @@ def turn_heater_on(mode, program_number=0):
     assert mode in {'auto', 'manual'}
 
     heater_switch = Relay('36')
+    # init the counter at zero as soon as controller starts
+    time_elapsed = 0
 
     if mode == 'auto':
-        # init the counter at zero as soon as controller starts
-        time_elapsed = 0
         while True:
             time_to_wait = 300
             # load program
@@ -60,7 +60,9 @@ def turn_heater_on(mode, program_number=0):
         while True:
             if not heater_switch.stats:
                 heater_switch.on()
-            heater_switch.catch_sleep(3600)
+            if not time_elapsed:
+                time_elapsed = time.time()
+            heater_switch.catch_sleep(3600, time_elapsed)
 
 
 def main():

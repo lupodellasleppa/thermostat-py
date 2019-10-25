@@ -90,11 +90,13 @@ def program_vs_relay(program_now, heater_switch, time_elapsed):
         logger.debug(f"{heater_switch.stats}")
         heater_switch.on()
         logger.debug("Received signal to turn heater ON.")
-        time_elapsed += time.time()
+        if not time_elapsed:
+            time_elapsed = time.time()
     elif not program_now and heater_switch.stats:
         # stop it
         heater_switch.off()
         logger.debug("Received signal to turn heater OFF.")
-        time_elapsed = 0
+        if time_elapsed:
+            time_elapsed = 0
 
     return time_elapsed
