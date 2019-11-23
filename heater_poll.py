@@ -28,9 +28,9 @@ def read_settings(path_to_settings):
     return settings_file
 
 
-def poll(path_to_settings, heater_switch, current):
+def poll(time_elapsed, heater_switch, current):
 
-    settings = read_settings(path_to_settings)
+    settings = settings_handler.main(time_elapsed)
     manual_on = settings['manual']
     manual_off = not settings['manual']
     auto_on = settings['auto']
@@ -82,7 +82,7 @@ def main():
         # check each loop for when we are in history
         current = util.get_now()
 
-        if last_current['day'] != current['day']:
+        if last_current is not None and last_current['day'] != current['day']:
             logger.debug('Entered another day in history.')
             util.write_log(
                 {
@@ -95,8 +95,9 @@ def main():
             )
             time_elapsed = 0
 
-        time_elapsed += poll(path_to_settings, heater_switch, current)
-        settings_handler.main(util.format_seconds(time_elapsed))
+        time_elapsed += poll(
+            util.format_seconds(time_elapsed), heater_switch, current
+        )
         last_current = current
 
 
