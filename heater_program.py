@@ -21,7 +21,7 @@ class Program(object):
         if not os.path.isfile(self.program_path):
             with open(self.program_example_path) as r:
                 program_example = json.load(r)
-            program_example = {"0": program_example}
+            program_example = {'0': program_example}
             with open(self.program_path, 'w') as w:
                 w.write(json.dumps(program_example))
 
@@ -33,7 +33,7 @@ class Program(object):
         try:
             program_number = int(program_number)
         except ValueError:
-            raise ValueError("Value for 'program_number' must be a number")
+            raise ValueError('Value for 'program_number' must be a number')
         try:
             return program[str(program_number)]
         except ValueError as e:
@@ -55,18 +55,18 @@ class Program(object):
 
         # exception messages
         invalid_day_message = (
-            "Please enter a valid day of the week"
-            " (English, case insensitive)"
+            'Please enter a valid day of the week'
+            ' (English, case insensitive)'
         )
         invalid_hour_message = (
-            "Argument 'hour' should be a number between 0 and 23"
+            'Argument 'hour' should be a number between 0 and 23'
         )
 
         # type checks
         try:
             program_number = str(int(program_number))
         except ValueError:
-            raise ValueError("Argument 'program_number' should be an integer.")
+            raise ValueError('Argument 'program_number' should be an integer.')
         try:
             day = [d.lower().replace(' ', '') for d in day]
         except AttributeError:
@@ -80,7 +80,7 @@ class Program(object):
         try:
             program = self.read_program()[program_number]
         except KeyError:
-            raise KeyError("Could not find specified program number.")
+            raise KeyError('Could not find specified program number.')
 
         # edit the configuration
         for d in day:
@@ -97,10 +97,10 @@ class Program(object):
 
     def add_program(mode='new', program_number=None):
 
-        assert mode in {'new', 'copy'}, "Only 'new' and 'copy' modes allowed"
+        assert mode in {'new', 'copy'}, 'Only 'new' and 'copy' modes allowed'
 
         invalid_program_number_message = (
-            "An number must be assigned to program_number"
+            'An number must be assigned to program_number'
             " when mode='copy' is set."
         )
 
@@ -210,9 +210,9 @@ def main():
     if not args.add:
 
         if not args.read:
-            assert args.program is not None, "Please enter a program number."
+            assert args.program is not None, 'Please enter a program number.'
             assert args.program in existing_programs, (
-                "Not a valid program number."
+                'Not a valid program number.'
             )
 
         if not args.copy:
@@ -224,7 +224,7 @@ def main():
 
     elif args.add:
 
-        assert args.program not in existing_programs, "Program already exists."
+        assert args.program not in existing_programs, 'Program already exists.'
 
 
     if args.read:

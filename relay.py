@@ -10,12 +10,12 @@ import time
 
 
 logger_name = 'thermostat'
-logging.basicConfig(
-    format='{levelname:<8} {asctime} - {message}',
-    style='{'
-)
+# logging.basicConfig(
+#     format='{levelname:<8} {asctime} - {message}',
+#     style='{'
+# )
 logger = logging.getLogger(logger_name)
-logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
 
 relay_pins = [
     {
@@ -70,16 +70,16 @@ class Relay(object):
             wrote_stats = self.write_stats(stats)
 
             if wrote_stats == stats:
-                logger.info(f"Turned ON channel {self.pin}.")
+                logger.info(f'Turned ON channel {self.pin}.')
             else:
-                logger.warning("Fault while writing stats.")
+                logger.warning('Fault while writing stats.')
 
             self.update_stats(wrote_stats)
 
         else:
             logger.warning(
-                f"Channel {self.pin} was already set to ON."
-                " Shutting down and restarting..."
+                f'Channel {self.pin} was already set to ON.'
+                ' Shutting down and restarting...'
             )
             self.off()
             self.catch_sleep(1)
@@ -96,14 +96,14 @@ class Relay(object):
             wrote_stats = self.write_stats(stats)
 
             if wrote_stats == stats:
-                logger.info(f"Turned OFF channel {self.pin}.")
+                logger.info(f'Turned OFF channel {self.pin}.')
             else:
-                logger.warning("Fault while writing stats.")
+                logger.warning('Fault while writing stats.')
 
             self.update_stats(wrote_stats)
 
         else:
-            logger.info(f"Channel {self.pin} was already OFF.")
+            logger.info(f'Channel {self.pin} was already OFF.')
 
 
     def clean(self):
@@ -115,11 +115,11 @@ class Relay(object):
         wrote_stats = self.write_stats(stats)
 
         if wrote_stats == stats:
-            logger.info(f"Cleaned up channel {self.pin}.")
+            logger.info(f'Cleaned up channel {self.pin}.')
             self.update_stats(wrote_stats)
 
         else:
-            logger.warning("Fault while writing stats.")
+            logger.warning('Fault while writing stats.')
 
 
     def read_stats(self):
@@ -137,7 +137,7 @@ class Relay(object):
 
         with open(self.stats_path, 'w') as f:
             n = f.write(json.dumps(new_stats))
-            logger.debug(f"Wrote {n} characters into stats.json file")
+            logger.debug(f'Wrote {n} characters into stats.json file')
 
         return self.read_stats()
 
@@ -165,18 +165,18 @@ class Relay(object):
 
             if sig_number in off_signals:
                 self.off()
-                logger.debug(f"Turned off channel {self.pin}")
+                logger.debug(f'Turned off channel {self.pin}')
                 self.clean()
-                logger.debug(f"Cleaned channel {self.pin}")
+                logger.debug(f'Cleaned channel {self.pin}')
                 raise SystemExit
             # elif sig_number in usr_signals:
                 # if time_elapsed:
                 #     e = time.time()
                 #     d = e - time_elapsed
                 #     d = datetime.timedelta(seconds=round(d))
-                #     logger.info(f"Heater has been ON for {str(d)}")
+                #     logger.info(f'Heater has been ON for {str(d)}')
                 # else:
-                #     logger.info("Heater is OFF.")
+                #     logger.info('Heater is OFF.')
 
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGSEGV, signal_handler)

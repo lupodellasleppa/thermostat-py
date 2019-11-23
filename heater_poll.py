@@ -17,15 +17,17 @@ logging.basicConfig(
     style='{'
 )
 logger = logging.getLogger(logger_name)
-logger.setLevel(logging.INFO)
+logger.setLevel(
+    util.get_loglevel(settings_handler.load_settings()['loglevel'])
+)
 
 
 def poll(time_elapsed, heater_switch, current):
 
     settings = settings_handler.handler(
         {
-            "time_elapsed": time_elapsed,
-            "last_day_on": current['formatted_date']
+            'time_elapsed': time_elapsed,
+            'last_day_on': current['formatted_date']
         }
     )
     logger.debug('Settings handler in poller: {}'.format(settings))
@@ -43,10 +45,10 @@ def poll(time_elapsed, heater_switch, current):
 
     elif auto and not manual:
         program = Program(settings['program'])
-        logger.debug(f"Loaded program {program_number}.")
+        logger.debug(f'Loaded program {program_number}.')
 
         logger.debug(
-            f"It is {current['formatted_time']} on {current['weekday'].title()}."
+            f'It is {current['formatted_time']} on {current['weekday'].title()}.'
         )
         # relay vs program relation
         time_elapsed = util.program_vs_relay(
@@ -60,7 +62,7 @@ def poll(time_elapsed, heater_switch, current):
 
     elif not manual and not auto:
         if heater_switch.stats:
-            logger.debug("Received signal to turn heater OFF.")
+            logger.debug('Received signal to turn heater OFF.')
             heater_switch.off()
         time.sleep(time_to_wait)
         return 0
@@ -69,18 +71,18 @@ def poll(time_elapsed, heater_switch, current):
 def main():
 
     heater_switch = Relay('36')
-    settings = settings_handler.handler()
+    settings = settings_handler.load_settings()
     if settings['last_day_on'] != util.get_now()['formatted_date']:
         time_elapsed = 0
         util.write_log(
             {
-                "date": last_current['formatted_date'],
-                "time_elapsed": time_elapsed
+                'date': last_current['formatted_date'],
+                'time_elapsed': time_elapsed
             }
         )
     else:
         time_elapsed_restore = datetime.datetime.strptime(
-            settings.get('time_elapsed', "0:00:00"), "%H:%M:%S"
+            settings.get('time_elapsed', '0:00:00'), '%H:%M:%S'
         )
         time_elapsed = round(datetime.timedelta(
         hours=time_elapsed_restore.hour,
@@ -98,8 +100,8 @@ def main():
             logger.debug('Entered another day in history.')
             util.write_log(
                 {
-                    "date": last_current['formatted_date'],
-                    "time_elapsed": time_elapsed
+                    'date': last_current['formatted_date'],
+                    'time_elapsed': time_elapsed
                 }
             )
             time_elapsed = 0

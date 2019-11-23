@@ -11,12 +11,12 @@ import util
 
 
 logger_name = 'thermostat'
-logging.basicConfig(
-    format='{levelname:<8} {asctime} - {message}',
-    style='{'
-)
+# logging.basicConfig(
+#     format='{levelname:<8} {asctime} - {message}',
+#     style='{'
+# )
 logger = logging.getLogger(logger_name)
-logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.DEBUG)
 
 
 def turn_heater_on(mode, program_number=0):
@@ -38,11 +38,11 @@ def turn_heater_on(mode, program_number=0):
             time_to_wait = 300
             # load program
             program = Program(program_number)
-            logger.debug(f"Loaded program {program_number}.")
+            logger.debug(f'Loaded program {program_number}.')
             # check each loop for when we are in history
             current = util.get_now()
             logger.debug(
-                f"It is {current['formatted_time']} on {current['weekday'].title()}."
+                f'It is {current['formatted_time']} on {current['weekday'].title()}.'
             )
             # compensate waiting time
             time_to_wait = util.five_o(
@@ -92,7 +92,7 @@ def main():
 
     if args.mode == 'auto' and args.program is None:
         raise parser.error(
-            "A program number must be specified if run in auto mode."
+            'A program number must be specified if run in auto mode.'
         )
 
     turn_heater_on(args.mode, args.program)

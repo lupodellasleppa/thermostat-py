@@ -16,14 +16,27 @@ logger.setLevel(logging.INFO)
 
 
 days_of_week = {
-    0: "monday",
-    1: "tuesday",
-    2: "wednesday",
-    3: "thursday",
-    4: "friday",
-    5: "saturday",
-    6: "sunday"
+    0: 'monday',
+    1: 'tuesday',
+    2: 'wednesday',
+    3: 'thursday',
+    4: 'friday',
+    5: 'saturday',
+    6: 'sunday'
 }
+
+def get_loglevel(level):
+
+    loglevel = {
+        'debug': logging.DEBUG,
+        'info': logging.INFO,
+        'warning': logging.WARNING,
+        'error': logging.ERROR,
+        'critical': logging.CRITICAL,
+        'exception': logging.EXCEPTION
+    }
+
+    return loglevel[level.lower()]
 
 
 def get_now():
@@ -48,17 +61,17 @@ def get_now():
     current_date = str(current_time.date())
 
     return {
-        "day": current_day,
-        "weekday": current_weekday,
-        "hours": current_hour,
-        "minutes": current_minute,
-        "seconds": current_second,
-        "microseconds": current_microsecond,
-        "total_seconds": current_total_seconds,
-        "formatted_time": str(datetime.timedelta(
+        'day': current_day,
+        'weekday': current_weekday,
+        'hours': current_hour,
+        'minutes': current_minute,
+        'seconds': current_second,
+        'microseconds': current_microsecond,
+        'total_seconds': current_total_seconds,
+        'formatted_time': str(datetime.timedelta(
             seconds=round(current_total_seconds)
         )), # TODO: use function format_seconds() below
-        "formatted_date": current_date
+        'formatted_date': current_date
     }
 
 
@@ -101,7 +114,7 @@ def five_o(time_to_wait, minutes=0, seconds=0, microseconds=0):
         time_to_wait -= seconds
     if microseconds:
         # compensate microseconds
-        time_to_wait -= float(f"0.{microseconds:0>6}")
+        time_to_wait -= float(f'0.{microseconds:0>6}')
 
     return time_to_wait
 
@@ -116,14 +129,14 @@ def program_vs_relay(program_now, heater_switch, time_elapsed):
 
     if program_now and not heater_switch.stats:
         # start it
-        logger.debug(f"{heater_switch.stats}")
-        logger.debug("Received signal to turn heater ON.")
+        logger.debug(f'{heater_switch.stats}')
+        logger.debug('Received signal to turn heater ON.')
         heater_switch.on()
         # if not time_elapsed:
         #     time_elapsed = time.time()
     elif not program_now and heater_switch.stats:
         # stop it
-        logger.debug("Received signal to turn heater OFF.")
+        logger.debug('Received signal to turn heater OFF.')
         heater_switch.off()
         # if time_elapsed:
         #     time_elapsed = 0
