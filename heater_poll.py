@@ -41,15 +41,21 @@ def poll(settings_path, time_elapsed, heater_switch, current):
         logger.debug(
             f"It is {current['formatted_time']} on {current['weekday'].title()}."
         )
+        program_now = program.program[current['weekday']][str(
+            current['hours']
+        )]
         # relay vs program relation
         time_elapsed = util.program_vs_relay(
-            program.program[current['weekday']][str(current['hours'])],
+            program_now,
             heater_switch,
             time_elapsed
         )
-        # finally, wait for 5 minutes
+        # finally, wait for time_to_wait
         heater_switch.catch_sleep(time_to_wait)
-        return time_to_wait
+        if program_now:
+            return time_to_wait
+        else:
+            return 0
 
     elif not manual and not auto:
         if heater_switch.stats:
