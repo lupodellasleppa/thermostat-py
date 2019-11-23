@@ -4,10 +4,10 @@ import argparse
 import datetime
 import logging
 import time
-import util
 
 from heater_program import Program
 from relay import Relay
+import util
 
 
 logger_name = 'thermostat'
@@ -42,7 +42,7 @@ def turn_heater_on(mode, program_number=0):
             # check each loop for when we are in history
             current = util.get_now()
             logger.debug(
-                f"It is {current['formatted']} on {current['day'].title()}."
+                f"It is {current['formatted_time']} on {current['weekday'].title()}."
             )
             # compensate waiting time
             time_to_wait = util.five_o(
@@ -50,7 +50,7 @@ def turn_heater_on(mode, program_number=0):
             )
             # relay vs program relation
             time_elapsed = util.program_vs_relay(
-                program.program[current['day']][str(current['hours'])],
+                program.program[current['weekday']][str(current['hours'])],
                 heater_switch,
                 time_elapsed
             )

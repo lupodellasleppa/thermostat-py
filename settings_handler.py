@@ -3,6 +3,7 @@
 import argparse
 import json
 import logging
+import os
 
 logger_name = 'thermostat'
 logging.basicConfig(
@@ -72,11 +73,24 @@ def create_parser():
     return args
 
 
-def main():
+def main(time_elapsed=None):
 
     args = create_parser()
 
-    with open('settings.json') as f:
+    settings_path = 'settings.json'
+
+    if not os.path.isfile(settings_path) or not os.stat(settings_path).st_size:
+        settings_file = {
+            "program": 0,
+            "auto": False,
+            "manual": False
+        }
+        with open(settings_path, 'w') as f:
+            f.write(json.dumps(settings_file, indent=2))
+        logger.debug('Created settings.json file.')
+
+
+    with open(settings_path) as f:
         settings_file = json.load(f)
 
     settings_changes = {
@@ -94,17 +108,30 @@ def main():
         )
     }
 
+    if time_elapsed is not None:
+        settings_changes.update({'time_elapsed': time_elapsed})
+
+    settings_changes.update(
+        {k:v for k, v in settings_file.items() if k not in settings_changes}
+    )
+
+
     logger.debug(settings_changes)
 
     if settings_changes != settings_file:
         settings_changes = json.dumps(settings_changes, indent=2)
         logger.debug('\n' + settings_changes)
         logger.debug("Settings changed!")
-        with open('settings.json', 'w') as f:
+        with open(settings_path, 'w') as f:
             f.write(settings_changes)
             f.write('\n')
     else:
         logger.debug("Settings not changed.")
+
+    with open(settings_path) as f:
+        settings_file = json.load(f)
+
+    return settings_file
 
 
 if __name__ == '__main__':

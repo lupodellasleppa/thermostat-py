@@ -2,6 +2,7 @@
 
 import datetime
 import logging
+import os
 import time
 
 
@@ -33,7 +34,8 @@ def get_now():
     '''
 
     current_time = datetime.datetime.now()
-    current_day = days_of_week[current_time.weekday()]
+    current_weekday = days_of_week[current_time.weekday()]
+    current_day = current_time.day
     current_hour = current_time.hour
     current_minute = current_time.minute
     current_second = current_time.second
@@ -43,19 +45,47 @@ def get_now():
         minutes=current_minute,
         seconds=current_second
     ).total_seconds()
+    current_date = str(current_time.date())
 
     return {
         "day": current_day,
+        "weekday": current_weekday,
         "hours": current_hour,
         "minutes": current_minute,
         "seconds": current_second,
         "microseconds": current_microsecond,
         "total_seconds": current_total_seconds,
-        "formatted": str(datetime.timedelta(
+        "formatted_time": str(datetime.timedelta(
             seconds=round(current_total_seconds)
-        ))
+        )), # TODO: use function format_seconds() below
+        "formatted_date": current_date
     }
 
+
+def write_log(data):
+
+    log_path = 'log.json'
+
+    if not os.path.isfile(log_path) or not os.stat(log_path).st_size:
+        with open(log_path, 'w') as f:
+            f.write(json.dumps([data], indent=2))
+            f.write('\n')
+    else:
+        with open(log_path) as f:
+            log_file = json.load(f)
+        log_file.append(data)
+        with open(log_path, 'w') as f:
+            f.write(json.dumps(data, indent=2))
+            f.write('\n')
+
+    return 'Wrote log to file.'
+
+
+def format_seconds(seconds):
+
+    return str(datetime.timedelta(
+        seconds=round(seconds)
+    ))
 
 def five_o(minutes=0, seconds=0, microseconds=0):
     '''
@@ -88,15 +118,15 @@ def program_vs_relay(program_now, heater_switch, time_elapsed):
     if program_now and not heater_switch.stats:
         # start it
         logger.debug(f"{heater_switch.stats}")
-        heater_switch.on()
         logger.debug("Received signal to turn heater ON.")
-        if not time_elapsed:
-            time_elapsed = time.time()
+        heater_switch.on()
+        # if not time_elapsed:
+        #     time_elapsed = time.time()
     elif not program_now and heater_switch.stats:
         # stop it
-        heater_switch.off()
         logger.debug("Received signal to turn heater OFF.")
-        if time_elapsed:
-            time_elapsed = 0
+        heater_switch.off()
+        # if time_elapsed:
+        #     time_elapsed = 0
 
     return time_elapsed
