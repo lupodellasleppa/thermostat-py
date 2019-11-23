@@ -34,30 +34,34 @@ def poll(settings_path, time_elapsed, heater_switch, current):
         heater_switch.catch_sleep(time_to_wait)
         return time_to_wait
 
-    elif auto and not manual:
+    elif auto:
         program = Program(settings['program'])
         logger.debug(f'Loaded program {program.program_number}.')
-
         logger.debug(
             f"It is {current['formatted_time']} on {current['weekday'].title()}."
         )
         program_now = program.program[current['weekday']][str(
             current['hours']
         )]
-        # relay vs program relation
-        time_elapsed = util.program_vs_relay(
-            program_now,
-            heater_switch,
-            time_elapsed
-        )
-        # finally, wait for time_to_wait
-        heater_switch.catch_sleep(time_to_wait)
+        logger.debug('Program is now: {}'.format(program_now))
+        # program_vs_relay
         if program_now:
+            if not heater_switch.stats:
+                # start it
+                logger.debug(f'Heater switch stats: {heater_switch.stats}')
+                logger.debug('Received signal to turn heater ON.')
+                heater_switch.on()
             return time_to_wait
         else:
+            if heater_switch.stats:
+                # stop it
+                logger.debug('Received signal to turn heater OFF.')
+                heater_switch.off()
             return 0
+        # finally, wait for time_to_wait
+        heater_switch.catch_sleep(time_to_wait)
 
-    elif not manual and not auto:
+    else:
         if heater_switch.stats:
             logger.debug('Received signal to turn heater OFF.')
             heater_switch.off()

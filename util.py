@@ -111,28 +111,3 @@ def five_o(time_to_wait, minutes=0, seconds=0, microseconds=0):
         time_to_wait -= float(f'0.{microseconds:0>6}')
 
     return time_to_wait
-
-
-def program_vs_relay(program_now, heater_switch, time_elapsed):
-    '''
-    If current day and hour is True in program:
-        start and increment time_elapsed
-    If otherwise current day and hour is False in program:
-        stop and reset time_elapsed
-    '''
-
-    if program_now and not heater_switch.stats:
-        # start it
-        logger.debug(f'{heater_switch.stats}')
-        logger.debug('Received signal to turn heater ON.')
-        heater_switch.on
-        # if not time_elapsed:
-        #     time_elapsed = time.time()
-    elif not program_now and heater_switch.stats:
-        # stop it
-        logger.debug('Received signal to turn heater OFF.')
-        heater_switch.off()
-        # if time_elapsed:
-        #     time_elapsed = 0
-
-    return time_elapsed
