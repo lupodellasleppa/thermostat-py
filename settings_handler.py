@@ -103,7 +103,8 @@ def load_settings(settings_path):
         settings_file = {
             "program": 0,
             "auto": False,
-            "manual": False
+            "manual": False,
+            "time_to_wait": 1
         }
         with open(settings_path, 'w') as f:
             f.write(json.dumps(settings_file, indent=2))
@@ -130,13 +131,10 @@ def update_settings(settings_changes, settings_file, settings_path):
     return load_settings(settings_path)
 
 
-def handler(time_elapsed=None, settings_changes={}):
+def handler(settings_changes={}):
 
     settings_path = 'settings.json'
     settings_file = load_settings(settings_path)
-
-    if time_elapsed is not None:
-        settings_changes.update({'time_elapsed': time_elapsed})
 
     logger.debug('Settings file read: {}'.format(settings_file))
     logger.debug('Settings before update: {}'.format(settings_changes))

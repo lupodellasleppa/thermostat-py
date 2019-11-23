@@ -22,23 +22,21 @@ logger.setLevel(logging.DEBUG)
 
 def poll(time_elapsed, heater_switch, current):
 
-    settings = settings_handler.handler(time_elapsed, {})
+    settings = settings_handler.handler(time_elapsed)
     logger.debug('Settings handler in poller: {}'.format(settings))
-    manual_on = settings['manual']
-    manual_off = not settings['manual']
-    auto_on = settings['auto']
-    auto_off = not settings['auto']
+    manual = settings['manual']
+    auto = settings['auto']
     prog_no = settings['program']
-    time_to_wait = 5
+    time_to_wait = settings['time_to_wait']
     logger.debug('time to wait: {}'.format(time_to_wait))
 
-    if manual_on:
+    if manual:
         if not heater_switch.stats: # heater is not ON
             heater_switch.on()
         heater_switch.catch_sleep(time_to_wait)
         return time_to_wait
 
-    elif manual_off and auto_on:
+    elif auto and not manual:
         program = Program(settings['program'])
         logger.debug(f"Loaded program {program_number}.")
 
@@ -55,7 +53,7 @@ def poll(time_elapsed, heater_switch, current):
         heater_switch.catch_sleep(time_to_wait, time_elapsed)
         return time_to_wait
 
-    elif manual_off and auto_off:
+    elif not manual and not auto:
         if heater_switch.stats:
             logger.debug("Received signal to turn heater OFF.")
             heater_switch.off()
