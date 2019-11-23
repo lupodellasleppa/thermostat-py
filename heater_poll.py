@@ -12,19 +12,6 @@ import settings_handler
 import util
 
 
-logger_name = 'thermostat'
-logging.basicConfig(
-    format='{levelname:<8} {asctime} - {message}',
-    style='{'
-)
-logger = logging.getLogger(logger_name)
-logger.setLevel(
-    util.get_loglevel(
-        settings_handler.load_settings(args.settings_path)['loglevel']
-    )
-)
-
-
 def poll(settings_path, time_elapsed, heater_switch, current):
 
     settings = settings_handler.handler(
@@ -73,6 +60,18 @@ def poll(settings_path, time_elapsed, heater_switch, current):
 
 
 def main(settings_path):
+
+    logger_name = 'thermostat'
+    logging.basicConfig(
+        format='{levelname:<8} {asctime} - {message}',
+        style='{'
+    )
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(
+        util.get_loglevel(
+            settings_handler.load_settings(args.settings_path)['loglevel']
+        )
+    )
 
     heater_switch = Relay('36')
     settings = settings_handler.load_settings(settings_path)
