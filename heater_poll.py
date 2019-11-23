@@ -77,7 +77,7 @@ def main(settings_path):
         time_elapsed = 0
         util.write_log(
             {
-                'date': last_current['formatted_date'],
+                'date': settings['last_day_on'],
                 'time_elapsed': time_elapsed
             }
         )
