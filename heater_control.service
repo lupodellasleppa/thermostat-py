@@ -4,6 +4,6 @@ Description=heater service control
 [Service]
 User=pi
 Type=idle
-Restart=no
+Restart=on-failure
 ExecStart=/usr/bin/python3 /home/pi/raspb-scripts/heater_poll.py /home/pi/raspb-scripts/settings.json
 ExecStopPost=/bin/sleep 1
