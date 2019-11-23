@@ -36,7 +36,7 @@ def poll(settings_path, time_elapsed, heater_switch, current):
 
     elif auto and not manual:
         program = Program(settings['program'])
-        logger.debug(f'Loaded program {program_number}.')
+        logger.debug(f'Loaded program {program.program_number}.')
 
         logger.debug(
             f"It is {current['formatted_time']} on {current['weekday'].title()}."
@@ -123,5 +123,5 @@ if __name__ == '__main__':
             settings_handler.load_settings(args.settings_path)['loglevel']
         )
     )
-    
+
     main(args.settings_path)
