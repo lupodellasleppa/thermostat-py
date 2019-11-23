@@ -8,12 +8,7 @@ import util
 
 
 logger_name = 'thermostat'
-# logging.basicConfig(
-#     format='{levelname:<8} {asctime} - {message}',
-#     style='{'
-# )
 logger = logging.getLogger(logger_name)
-# logger.setLevel(logging.INFO)
 
 
 def create_parser():

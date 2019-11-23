@@ -11,12 +11,12 @@ import util
 
 
 logger_name = 'thermostat'
-# logging.basicConfig(
-#     format='{levelname:<8} {asctime} - {message}',
-#     style='{'
-# )
+logging.basicConfig(
+    format='{levelname:<8} {asctime} - {message}',
+    style='{'
+)
 logger = logging.getLogger(logger_name)
-# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
 
 
 def turn_heater_on(mode, program_number=0):
