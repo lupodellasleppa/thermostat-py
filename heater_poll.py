@@ -30,7 +30,9 @@ def poll(time_elapsed, heater_switch, current):
     prog_no = settings['program']
     time_to_wait = 5
     time_to_wait = util.five_o(
-        current['seconds'], current['microseconds']
+        time_to_wait,
+        seconds=current['seconds'],
+        microseconds=current['microseconds']
     )
     logger.debug('time to wait: {}'.format(time_to_wait))
 

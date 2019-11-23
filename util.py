@@ -87,12 +87,11 @@ def format_seconds(seconds):
         seconds=round(seconds)
     ))
 
-def five_o(minutes=0, seconds=0, microseconds=0):
+def five_o(time_to_wait, minutes=0, seconds=0, microseconds=0):
     '''
     Stay on the clock by compensating waiting time.
     '''
 
-    time_to_wait = 300
     if minutes:
         # compensate minutes
         to_reach_five = minutes % 5
