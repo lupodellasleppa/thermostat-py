@@ -124,7 +124,7 @@ def main(time_elapsed=None):
         'loglevel': (
             args.loglevel if args.loglevel is not None
             else settings_file['loglevel']
-        )
+        ),
         'manual': (
             args.manual if args.manual is not None
             else settings_file['manual']
