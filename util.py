@@ -69,9 +69,7 @@ def get_now():
     }
 
 
-def write_log(data):
-
-    log_path = 'log.json'
+def write_log(log_path, data):
 
     if not os.path.isfile(log_path) or not os.stat(log_path).st_size:
         with open(log_path, 'w') as f:
