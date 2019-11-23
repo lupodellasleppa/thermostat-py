@@ -12,7 +12,7 @@ logging.basicConfig(
     style='{'
 )
 logger = logging.getLogger(logger_name)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 days_of_week = {
