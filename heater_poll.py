@@ -75,7 +75,7 @@ def main(settings_path):
     settings = settings_handler.load_settings(settings_path)
     if settings['last_day_on'] != util.get_now()['formatted_date']:
         time_elapsed = 0
-        util.write_log(
+        util.write_log(settings['logpath'],
             {
                 'date': settings['last_day_on'],
                 'time_elapsed': time_elapsed
