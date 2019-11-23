@@ -43,7 +43,7 @@ def create_parser():
         f'manual: {args.manual}; auto: {args.auto}; program: {args.program};'
     )
 
-    def str2bool(arg):
+    def string_to_bool(arg):
 
         if arg is not None and isinstance(arg, str):
             if arg.lower() in {'true', 't', 'yes', 'y', 'on', '1'}:
@@ -57,8 +57,8 @@ def create_parser():
         else:
             pass
 
-    args.manual = str2bool(args.manual)
-    args.auto = str2bool(args.auto)
+    args.manual = string_to_bool(args.manual)
+    args.auto = string_to_bool(args.auto)
 
     logger.debug(
         f'manual: {args.manual}; auto: {args.auto}; program: {args.program};'
@@ -79,20 +79,6 @@ def main(time_elapsed=None):
 
     settings_path = 'settings.json'
 
-    if not os.path.isfile(settings_path) or not os.stat(settings_path).st_size:
-        settings_file = {
-            "program": 0,
-            "auto": False,
-            "manual": False
-        }
-        with open(settings_path, 'w') as f:
-            f.write(json.dumps(settings_file, indent=2))
-        logger.debug('Created settings.json file.')
-
-
-    with open(settings_path) as f:
-        settings_file = json.load(f)
-
     settings_changes = {
         "program": (
             args.program if args.program is not None
@@ -108,15 +94,28 @@ def main(time_elapsed=None):
         )
     }
 
-    if time_elapsed is not None:
-        settings_changes.update({'time_elapsed': time_elapsed})
-
-    settings_changes.update(
-        {k:v for k, v in settings_file.items() if k not in settings_changes}
-    )
+    handler(settings_path=settings_path, settings_changes=settings_changes)
 
 
-    logger.debug(settings_changes)
+def load_settings(settings_path):
+
+    if not os.path.isfile(settings_path) or not os.stat(settings_path).st_size:
+        settings_file = {
+            "program": 0,
+            "auto": False,
+            "manual": False
+        }
+        with open(settings_path, 'w') as f:
+            f.write(json.dumps(settings_file, indent=2))
+        logger.debug('Created settings.json file.')
+
+    with open(settings_path) as f:
+        settings_file = json.load(f)
+
+    return settings_file
+
+
+def update_settings(settings_changes, settings_file, settings_path):
 
     if settings_changes != settings_file:
         settings_changes = json.dumps(settings_changes, indent=2)
@@ -128,10 +127,25 @@ def main(time_elapsed=None):
     else:
         logger.debug("Settings not changed.")
 
-    with open(settings_path) as f:
-        settings_file = json.load(f)
+    return load_settings(settings_path)
 
-    return settings_file
+
+def handler(time_elapsed=None, settings_changes=None):
+
+    settings_path = 'settings.json'
+    settings_file = load_settings(settings_path)
+
+    if time_elapsed is not None:
+        if settings_changes is not None:
+            settings_changes.update({'time_elapsed': time_elapsed})
+        else:
+            settings_changes = {'time_elapsed': time_elapsed}
+
+    settings_changes.update(
+        {k:v for k, v in settings_file.items() if k not in settings_changes}
+    )
+
+    return update_settings(settings_changes, settings_file, settings_path)
 
 
 if __name__ == '__main__':

@@ -20,17 +20,9 @@ logger = logging.getLogger(logger_name)
 logger.setLevel(logging.DEBUG)
 
 
-def read_settings(path_to_settings):
-
-    with open(path_to_settings) as f:
-        settings_file = json.load(f)
-
-    return settings_file
-
-
 def poll(time_elapsed, heater_switch, current):
 
-    settings = settings_handler.main(time_elapsed)
+    settings = settings_handler.handler(time_elapsed)
     manual_on = settings['manual']
     manual_off = not settings['manual']
     auto_on = settings['auto']
@@ -72,7 +64,6 @@ def poll(time_elapsed, heater_switch, current):
 
 def main():
 
-    path_to_settings = 'settings.json'
     heater_switch = Relay('36')
     time_elapsed = 0
     last_current = None
@@ -96,7 +87,9 @@ def main():
             time_elapsed = 0
 
         time_elapsed += poll(
-            util.format_seconds(time_elapsed), heater_switch, current
+            util.format_seconds(time_elapsed),
+            heater_switch,
+            current
         )
         last_current = current
 
