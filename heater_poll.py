@@ -73,7 +73,7 @@ def main():
     time_elapsed = round(datetime.timedelta(
         hours=time_elapsed.hour,
         minutes=time_elapsed.minute,
-        seconds=time_elapsed.seconds
+        seconds=time_elapsed.second
     ).total_seconds())
     last_current = None
 
