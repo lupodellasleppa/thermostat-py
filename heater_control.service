@@ -5,6 +5,5 @@ Description=heater service control
 User=pi
 Type=idle
 Restart=no
-Environment="ARGS=%I"
-ExecStart=/bin/sh /home/pi/raspb-scripts/main.sh $ARGS
+ExecStart=/usr/bin/python3 /home/pi/raspb-scripts/heater_poll.py --settings_path settings.json
 ExecStopPost=/bin/sleep 1
