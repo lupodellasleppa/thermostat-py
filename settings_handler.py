@@ -139,7 +139,10 @@ def main(time_elapsed=None):
         )
     }
 
-    return handler(settings_changes=settings_changes)
+    return handler(
+        settings_path=settings_path,
+        settings_changes=settings_changes
+    )
 
 
 def load_settings(settings_path):
