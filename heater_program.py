@@ -59,14 +59,14 @@ class Program(object):
             ' (English, case insensitive)'
         )
         invalid_hour_message = (
-            'Argument 'hour' should be a number between 0 and 23'
+            "Argument 'hour' should be a number between 0 and 23"
         )
 
         # type checks
         try:
             program_number = str(int(program_number))
         except ValueError:
-            raise ValueError('Argument 'program_number' should be an integer.')
+            raise ValueError("Argument 'program_number' should be an integer.")
         try:
             day = [d.lower().replace(' ', '') for d in day]
         except AttributeError:
@@ -97,7 +97,7 @@ class Program(object):
 
     def add_program(mode='new', program_number=None):
 
-        assert mode in {'new', 'copy'}, 'Only 'new' and 'copy' modes allowed'
+        assert mode in {'new', 'copy'}, "Only 'new' and 'copy' modes allowed"
 
         invalid_program_number_message = (
             'An number must be assigned to program_number'
