@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
+import datetime
 import json
-import logging
 import logging
 import time
 
@@ -68,7 +68,13 @@ def poll(time_elapsed, heater_switch, current):
 def main():
 
     heater_switch = Relay('36')
-    time_elapsed = settings_handler.handler()['time_elapsed']
+    time_elapsed_r = settings_handler.handler().get('time_elapsed', "0:00:00")
+    time_elapsed = datetime.datetime.strptime(time_elapsed_r, "%H:%M:%S")
+    time_elapsed = round(datetime.timedelta(
+        hours=time_elapsed.hour,
+        minutes=time_elapsed.minute,
+        seconds=time_elapsed.seconds
+    ).total_seconds())
     last_current = None
 
     while True:

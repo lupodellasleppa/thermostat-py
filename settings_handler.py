@@ -130,7 +130,7 @@ def update_settings(settings_changes, settings_file, settings_path):
     return load_settings(settings_path)
 
 
-def handler(time_elapsed=None, settings_changes=None):
+def handler(time_elapsed=None, settings_changes={}):
 
     settings_path = 'settings.json'
     settings_file = load_settings(settings_path)
