@@ -48,7 +48,7 @@ def poll(time_elapsed, heater_switch, current):
         logger.debug(f'Loaded program {program_number}.')
 
         logger.debug(
-            f'It is {current['formatted_time']} on {current['weekday'].title()}.'
+            f"It is {current['formatted_time']} on {current['weekday'].title()}."
         )
         # relay vs program relation
         time_elapsed = util.program_vs_relay(
