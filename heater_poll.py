@@ -98,7 +98,7 @@ def main(settings_path):
         current = util.get_now()
 
         if last_current is not None and last_current['day'] != current['day']:
-            logger.debug('Entered another day in history.')
+            logger.info('Entered another day in history.')
             util.write_log(
                 {
                     'date': last_current['formatted_date'],
