@@ -78,7 +78,7 @@ def main(time_elapsed=None):
     args = create_parser()
 
     settings_path = 'settings.json'
-
+    settings_file = load_settings(settings_path)
     settings_changes = {
         "program": (
             args.program if args.program is not None
@@ -94,7 +94,7 @@ def main(time_elapsed=None):
         )
     }
 
-    handler(settings_path=settings_path, settings_changes=settings_changes)
+    handler(settings_changes=settings_changes)
 
 
 def load_settings(settings_path):

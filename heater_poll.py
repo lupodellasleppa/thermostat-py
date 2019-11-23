@@ -28,15 +28,15 @@ def poll(time_elapsed, heater_switch, current):
     auto_on = settings['auto']
     auto_off = not settings['auto']
     prog_no = settings['program']
+    time_to_wait = 1
 
     if manual_on:
         if not heater_switch.stats: # heater is not ON
             heater_switch.on()
-        time.sleep(1)
-        return 1
+        time.sleep(time_to_wait)
+        return time_to_wait
 
     elif manual_off and auto_on:
-        # time_to_wait = 5
         program = Program(settings['program'])
         logger.debug(f"Loaded program {program_number}.")
 
@@ -44,9 +44,9 @@ def poll(time_elapsed, heater_switch, current):
             f"It is {current['formatted_time']} on {current['weekday'].title()}."
         )
         # # compensate waiting time
-        # time_to_wait = util.five_o(
-        #     current['seconds'], current['microseconds']
-        # )
+        time_to_wait = util.five_o(
+            current['seconds'], current['microseconds']
+        )
         # relay vs program relation
         time_elapsed = util.program_vs_relay(
             program.program[current['weekday']][str(current['hours'])],
@@ -55,17 +55,20 @@ def poll(time_elapsed, heater_switch, current):
         )
         # finally, wait for 5 minutes
         heater_switch.catch_sleep(time_to_wait, time_elapsed)
+        return time_to_wait
 
     elif manual_off and auto_off:
         if heater_switch.stats:
             logger.debug("Received signal to turn heater OFF.")
             heater_switch.off()
+        time.sleep(time_to_wait)
+        return 0
 
 
 def main():
 
     heater_switch = Relay('36')
-    time_elapsed = 0
+    time_elapsed = settings_handler.handler()['time_elapsed']
     last_current = None
 
     while True:
