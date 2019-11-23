@@ -51,15 +51,15 @@ def poll(settings_path, time_elapsed, heater_switch, current):
                 logger.debug(f'Heater switch stats: {heater_switch.stats}')
                 logger.debug('Received signal to turn heater ON.')
                 heater_switch.on()
+            heater_switch.catch_sleep(time_to_wait)
             return time_to_wait
         else:
             if heater_switch.stats:
                 # stop it
                 logger.debug('Received signal to turn heater OFF.')
                 heater_switch.off()
+            heater_switch.catch_sleep(time_to_wait)
             return 0
-        # finally, wait for time_to_wait
-        heater_switch.catch_sleep(time_to_wait)
 
     else:
         if heater_switch.stats:
