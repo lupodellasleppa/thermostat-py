@@ -149,7 +149,7 @@ def load_settings(settings_path):
         settings_file = {
             'program': '0',
             'auto': False,
-            'last_day_on': util.get_now()['format_date'],
+            'last_day_on': util.get_now()['formatted_date'],
             'loglevel': 'INFO',
             'manual': False,
             'time_elapsed': '0:00:00',
