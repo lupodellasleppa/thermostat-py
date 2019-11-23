@@ -8,3 +8,6 @@ Restart=on-failure
 RestartSec=5
 ExecStart=/usr/bin/python3 /home/pi/raspb-scripts/heater_poll.py /home/pi/raspb-scripts/settings.json
 ExecStopPost=/bin/sleep 1
+
+[Install]
+WantedBy=multi-user.target
