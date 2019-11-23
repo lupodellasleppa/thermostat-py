@@ -22,7 +22,7 @@ logger.setLevel(logging.DEBUG)
 
 def poll(time_elapsed, heater_switch, current):
 
-    settings = settings_handler.handler(time_elapsed)
+    settings = settings_handler.handler({"time_elapsed": time_elapsed})
     logger.debug('Settings handler in poller: {}'.format(settings))
     manual = settings['manual']
     auto = settings['auto']
