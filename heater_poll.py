@@ -61,18 +61,6 @@ def poll(settings_path, time_elapsed, heater_switch, current):
 
 def main(settings_path):
 
-    logger_name = 'thermostat'
-    logging.basicConfig(
-        format='{levelname:<8} {asctime} - {message}',
-        style='{'
-    )
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(
-        util.get_loglevel(
-            settings_handler.load_settings(args.settings_path)['loglevel']
-        )
-    )
-
     heater_switch = Relay('36')
     settings = settings_handler.load_settings(settings_path)
     if settings['last_day_on'] != util.get_now()['formatted_date']:
@@ -123,4 +111,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('settings_path')
     args = parser.parse_args()
+
+    logger_name = 'thermostat'
+    logging.basicConfig(
+        format='{levelname:<8} {asctime} - {message}',
+        style='{'
+    )
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(
+        util.get_loglevel(
+            settings_handler.load_settings(args.settings_path)['loglevel']
+        )
+    )
+    
     main(args.settings_path)
