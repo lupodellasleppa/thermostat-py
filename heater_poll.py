@@ -98,3 +98,7 @@ def main():
         time_elapsed += poll(path_to_settings, heater_switch, current)
         settings_handler.main(util.format_seconds(time_elapsed))
         last_current = current
+
+
+if __name__ == '__main__':
+    main()
