@@ -145,7 +145,7 @@ class Relay(object):
 
         self.stats = new_stats[self.pin]
 
-    def catch_sleep(self, seconds, time_elapsed):
+    def catch_sleep(self, seconds):
         '''
         Wrapper for time.sleep() catching signals.
         '''
@@ -169,14 +169,14 @@ class Relay(object):
                 self.clean()
                 logger.debug(f"Cleaned channel {self.pin}")
                 raise SystemExit
-            elif sig_number in usr_signals:
-                if time_elapsed:
-                    e = time.time()
-                    d = e - time_elapsed
-                    d = datetime.timedelta(seconds=round(d))
-                    logger.info(f"Heater has been ON for {str(d)}")
-                else:
-                    logger.info("Heater is OFF.")
+            # elif sig_number in usr_signals:
+                # if time_elapsed:
+                #     e = time.time()
+                #     d = e - time_elapsed
+                #     d = datetime.timedelta(seconds=round(d))
+                #     logger.info(f"Heater has been ON for {str(d)}")
+                # else:
+                #     logger.info("Heater is OFF.")
 
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGSEGV, signal_handler)

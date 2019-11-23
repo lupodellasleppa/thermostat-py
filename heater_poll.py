@@ -29,17 +29,12 @@ def poll(time_elapsed, heater_switch, current):
     auto_off = not settings['auto']
     prog_no = settings['program']
     time_to_wait = 5
-    time_to_wait = util.five_o(
-        time_to_wait,
-        seconds=current['seconds'],
-        microseconds=current['microseconds']
-    )
     logger.debug('time to wait: {}'.format(time_to_wait))
 
     if manual_on:
         if not heater_switch.stats: # heater is not ON
             heater_switch.on()
-        time.sleep(time_to_wait)
+        heater_switch.catch_sleep(time_to_wait)
         return time_to_wait
 
     elif manual_off and auto_on:
