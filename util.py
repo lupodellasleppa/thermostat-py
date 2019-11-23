@@ -32,8 +32,7 @@ def get_loglevel(level):
         'info': logging.INFO,
         'warning': logging.WARNING,
         'error': logging.ERROR,
-        'critical': logging.CRITICAL,
-        'exception': logging.EXCEPTION
+        'critical': logging.CRITICAL
     }
 
     return loglevel[level.lower()]
