@@ -146,6 +146,7 @@ def load_settings(settings_path):
     '''
 
     if not os.path.isfile(settings_path) or not os.stat(settings_path).st_size:
+        logger.info('{} not found, creating.'.format(settings_path))
         settings_file = {
             'program': '0',
             'auto': False,
@@ -190,7 +191,6 @@ def handler(settings_path, settings_changes={}):
     Returns contents of 'settings.json' after updates in a python dictionary.
     '''
 
-    settings_path = 'settings.json'
     settings_file = load_settings(settings_path)
 
     logger.debug('Settings file read: {}'.format(settings_file))
