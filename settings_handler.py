@@ -136,12 +136,10 @@ def handler(time_elapsed=None, settings_changes={}):
     settings_file = load_settings(settings_path)
 
     if time_elapsed is not None:
-        if settings_changes is not None:
-            settings_changes.update({'time_elapsed': time_elapsed})
-        else:
-            settings_changes = {'time_elapsed': time_elapsed}
+        settings_changes.update({'time_elapsed': time_elapsed})
 
     logger.debug('Settings file read: {}'.format(settings_file))
+    logger.debug('Settings before update: {}'.format(settings_changes))
 
     settings_changes.update(
         {k:v for k, v in settings_file.items() if k not in settings_changes}
