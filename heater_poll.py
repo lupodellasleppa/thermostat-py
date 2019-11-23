@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import argparse
 import datetime
 import json
 import logging
@@ -18,14 +19,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(logger_name)
 logger.setLevel(
-    util.get_loglevel(settings_handler.load_settings()['loglevel'])
+    util.get_loglevel(
+        settings_handler.load_settings(args.settings_path)['loglevel']
+    )
 )
 
 
-def poll(time_elapsed, heater_switch, current):
+def poll(settings_path, time_elapsed, heater_switch, current):
 
     settings = settings_handler.handler(
-        {
+        settings_path=args.settings_path,
+        settings_changes={
             'time_elapsed': time_elapsed,
             'last_day_on': current['formatted_date']
         }
@@ -68,10 +72,10 @@ def poll(time_elapsed, heater_switch, current):
         return 0
 
 
-def main():
+def main(settings_path):
 
     heater_switch = Relay('36')
-    settings = settings_handler.load_settings()
+    settings = settings_handler.load_settings(settings_path)
     if settings['last_day_on'] != util.get_now()['formatted_date']:
         time_elapsed = 0
         util.write_log(
@@ -107,6 +111,7 @@ def main():
             time_elapsed = 0
 
         time_elapsed += poll(
+            settings_path,
             util.format_seconds(time_elapsed),
             heater_switch,
             current
@@ -115,4 +120,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('settings_path')
+    args = parser.parse_args()
+    main(args.settings_path)

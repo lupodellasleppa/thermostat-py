@@ -186,7 +186,7 @@ def update_settings(settings_changes, settings_file, settings_path):
     return load_settings(settings_path)
 
 
-def handler(settings_changes={}):
+def handler(settings_path, settings_changes={}):
     '''
     Sends updates to update_settings function.
     Returns contents of 'settings.json' after updates in a python dictionary.
