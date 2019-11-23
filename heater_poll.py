@@ -48,7 +48,7 @@ def poll(settings_path, time_elapsed, heater_switch, current):
             time_elapsed
         )
         # finally, wait for 5 minutes
-        heater_switch.catch_sleep(time_to_wait, time_elapsed)
+        heater_switch.catch_sleep(time_to_wait)
         return time_to_wait
 
     elif not manual and not auto:
