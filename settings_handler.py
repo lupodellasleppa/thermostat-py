@@ -141,9 +141,12 @@ def handler(time_elapsed=None, settings_changes={}):
         else:
             settings_changes = {'time_elapsed': time_elapsed}
 
+    logger.debug('Settings file read: {}'.format(settings_file))
+
     settings_changes.update(
         {k:v for k, v in settings_file.items() if k not in settings_changes}
     )
+    logger.debug('Settings after update: {}'.format(settings_changes))
 
     return update_settings(settings_changes, settings_file, settings_path)
 
