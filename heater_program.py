@@ -131,7 +131,7 @@ class Program(object):
 
             write_program(program)
 
-    @static_method
+    @staticmethod
     def read_program():
 
         with open(self.program_path) as f:
@@ -248,7 +248,7 @@ def _read(program_number, day, hour):
 
 
 def template(program=True):
-
+    pass
 
 
 

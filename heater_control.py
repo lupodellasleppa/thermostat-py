@@ -91,7 +91,7 @@ def main():
     args = parser.parse_args()
 
     if args.mode == 'auto' and args.program is None:
-        raise argparse.error(
+        raise parser.error(
             "A program number must be specified if run in auto mode."
         )
 
