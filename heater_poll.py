@@ -17,12 +17,17 @@ logging.basicConfig(
     style='{'
 )
 logger = logging.getLogger(logger_name)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def poll(time_elapsed, heater_switch, current):
 
-    settings = settings_handler.handler({"time_elapsed": time_elapsed})
+    settings = settings_handler.handler(
+        {
+            "time_elapsed": time_elapsed,
+            "last_day_on": current['formatted_date']
+        }
+    )
     logger.debug('Settings handler in poller: {}'.format(settings))
     manual = settings['manual']
     auto = settings['auto']
@@ -64,12 +69,23 @@ def poll(time_elapsed, heater_switch, current):
 def main():
 
     heater_switch = Relay('36')
-    time_elapsed_r = settings_handler.handler().get('time_elapsed', "0:00:00")
-    time_elapsed = datetime.datetime.strptime(time_elapsed_r, "%H:%M:%S")
-    time_elapsed = round(datetime.timedelta(
-        hours=time_elapsed.hour,
-        minutes=time_elapsed.minute,
-        seconds=time_elapsed.second
+    settings = settings_handler.handler()
+    if settings['last_day_on'] != util.get_now()['formatted_date']:
+        time_elapsed = 0
+        util.write_log(
+            {
+                "date": last_current['formatted_date'],
+                "time_elapsed": time_elapsed
+            }
+        )
+    else:
+        time_elapsed_restore = datetime.datetime.strptime(
+            settings.get('time_elapsed', "0:00:00"), "%H:%M:%S"
+        )
+        time_elapsed = round(datetime.timedelta(
+        hours=time_elapsed_restore.hour,
+        minutes=time_elapsed_restore.minute,
+        seconds=time_elapsed_restore.second
     ).total_seconds())
     last_current = None
 
@@ -82,10 +98,7 @@ def main():
             logger.debug('Entered another day in history.')
             util.write_log(
                 {
-                    "date": "{} {}".format(
-                        last_current['weekday'],
-                        last_current['formatted_time']
-                    ),
+                    "date": last_current['formatted_date'],
                     "time_elapsed": time_elapsed
                 }
             )
