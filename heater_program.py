@@ -104,7 +104,7 @@ class Program(object):
             " when mode='copy' is set."
         )
 
-        program = read_program()
+        program = self.read_program()
         latest_program = int(max(
             [str(k) for k in program.keys()], key=lambda x: int(x)
         ))
@@ -131,8 +131,7 @@ class Program(object):
 
             write_program(program)
 
-    @staticmethod
-    def read_program():
+    def read_program(self):
 
         with open(self.program_path) as f:
             program = json.load(f)
@@ -204,7 +203,7 @@ def main():
 
     args = parser.parse_args
 
-    program_read = read_program()
+    # program_read = read_program()
     existing_programs = set(program.keys())
 
     if not args.add:
