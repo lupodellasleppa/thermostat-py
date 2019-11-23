@@ -96,9 +96,15 @@ def main():
 
     logger.debug(settings_changes)
 
-    with open('settings.json', 'w') as f:
-        f.write(json.dumps(settings_changes, indent=2))
-        f.write('\n')
+    if settings_changes != settings_file:
+        settings_changes = json.dumps(settings_changes, indent=2)
+        logger.debug('\n' + settings_changes)
+        logger.debug("Settings changed!")
+        with open('settings.json', 'w') as f:
+            f.write(settings_changes)
+            f.write('\n')
+    else:
+        logger.debug("Settings not changed.")
 
 
 if __name__ == '__main__':
