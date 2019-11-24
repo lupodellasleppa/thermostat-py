@@ -57,7 +57,7 @@ class Poller():
         settings = settings_handler.handler(
             settings_path=self.settings_path,
             settings_changes={
-                'time_elapsed': self.time_elapsed,
+                'time_elapsed': util.format_seconds(elf.time_elapsed),
                 'last_day_on': current['formatted_date']
             }
         )
