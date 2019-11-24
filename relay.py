@@ -140,7 +140,7 @@ class Relay(object):
 
         self.stats = new_stats[self.pin]
 
-    def catch_sleep(self, seconds):
+    def catch_sleep(self, seconds, temperature):
         '''
         Wrapper for time.sleep() catching signals.
         '''
@@ -164,6 +164,10 @@ class Relay(object):
                 self.clean()
                 logger.debug(f'Cleaned channel {self.pin}')
                 raise SystemExit
+            elif sig_number in usr_signals:
+                logger.info(
+                    'Room temperature is {}° celsius.'.format(temperature)
+                )
 
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGSEGV, signal_handler)

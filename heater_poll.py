@@ -83,7 +83,9 @@ class Poller():
             if manual:
                 if not self.heater_switch.stats: # heater is not ON
                     self.heater_switch.on()
-                self.heater_switch.catch_sleep(time_to_wait)
+                self.heater_switch.catch_sleep(
+                    time_to_wait, self.temperature
+                )
                 return time_to_wait
 
             elif auto:
@@ -112,14 +114,18 @@ class Poller():
                         )
                         logger.debug('Received signal to turn heater ON.')
                         self.heater_switch.on()
-                    self.heater_switch.catch_sleep(time_to_wait)
+                    self.heater_switch.catch_sleep(
+                        time_to_wait, self.temperature
+                    )
                     return time_to_wait
                 else:
                     if self.heater_switch.stats:
                         # stop it
                         logger.debug('Received signal to turn heater OFF.')
                         self.heater_switch.off()
-                    self.heater_switch.catch_sleep(time_to_wait)
+                    self.heater_switch.catch_sleep(
+                        time_to_wait, self.temperature
+                    )
                     return 0
 
         else:
