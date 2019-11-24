@@ -2,3 +2,4 @@ stats.json
 program*.json
 __pycache__/
 settings.json
+log.json
