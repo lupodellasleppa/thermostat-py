@@ -24,6 +24,7 @@ class Poller():
         self.UDP_IP = '192.168.1.112'
         self.thermometer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.thermometer.settimeout(1.0)
+        self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.thermometer.bind(('', self.UDP_port))
         self.thermometer_poll = 5
         self.temperature = None
