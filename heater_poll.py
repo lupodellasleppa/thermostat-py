@@ -22,7 +22,8 @@ def poll(
     thermometer_poll,
     UDP_port,
     UDP_IP,
-    thermometer
+    thermometer,
+    temperature=100
 ):
 
     settings = settings_handler.handler(
