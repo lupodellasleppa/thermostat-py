@@ -57,7 +57,7 @@ class Poller():
         settings = settings_handler.handler(
             settings_path=self.settings_path,
             settings_changes={
-                'time_elapsed': util.format_seconds(elf.time_elapsed),
+                'time_elapsed': util.format_seconds(self.time_elapsed),
                 'last_day_on': current['formatted_date']
             }
         )
@@ -73,7 +73,7 @@ class Poller():
             self.temperature = json.loads(
                 self.thermometer.recv(4096).decode()
             )['celsius']
-        logger.info(
+        logger.debug(
             'Temperature from thermometer is: {}° celsius.'.format(
                 self.temperature
             )
