@@ -133,7 +133,9 @@ class Poller():
             if self.heater_switch.stats:
                 logger.debug('Received signal to turn heater OFF.')
                 self.heater_switch.off()
-            time.sleep(time_to_wait)
+            self.heater_switch.catch_sleep(
+                time_to_wait, self.temperature
+            )
             return 0
 
 
