@@ -13,144 +13,148 @@ import settings_handler
 import util
 
 
-def poll(
-    settings_path,
-    time_elapsed,
-    heater_switch,
-    current,
-    loop_count,
-    thermometer_poll,
-    UDP_port,
-    UDP_IP,
-    thermometer,
-    temperature=100
-):
+class Poller():
 
-    settings = settings_handler.handler(
-        settings_path=args.settings_path,
-        settings_changes={
-            'time_elapsed': time_elapsed,
-            'last_day_on': current['formatted_date']
-        }
-    )
-    logger.debug('Settings handler in poller: {}'.format(settings))
-    manual = settings['manual']
-    auto = settings['auto']
-    prog_no = settings['program']
-    time_to_wait = settings['time_to_wait']
-    logger.debug('time to wait: {}'.format(time_to_wait))
+    def __init__(self, settings_path):
 
-    if not loop_count or not loop_count % thermometer_poll:
-        thermometer.sendto(b'temps_req', (UDP_IP, UDP_port))
-        temperature = json.loads(thermometer.recv(4096).decode())['celsius']
-    logger.info(
-        'Temperature from thermometer is: {}° celsius.'.format(temperature)
-    )
-
-    if temperature < settings['temperature']:
-        if manual:
-            if not heater_switch.stats: # heater is not ON
-                heater_switch.on()
-            heater_switch.catch_sleep(time_to_wait)
-            return time_to_wait
-
-        elif auto:
-            program = Program(settings['program'])
-            logger.debug(f'Loaded program {program.program_number}.')
-            logger.debug(
-                f"It is {current['formatted_time']} on {current['weekday'].title()}."
+        self.settings_path = settings_path
+        self.heater_switch = Relay('36')
+        # parameters for UDP connection with thermometer
+        self.UDP_port = 4210
+        self.UDP_IP = '192.168.1.112'
+        self.thermometer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.thermometer.settimeout(1.0)
+        self.thermometer.bind(('', UDP_port))
+        self.thermometer_poll = 5
+        self.temperature = None
+        # load settings
+        settings = settings_handler.load_settings(settings_path)
+        if settings['last_day_on'] != util.get_now()['formatted_date']:
+            self.time_elapsed = 0
+            util.write_log(settings['logpath'],
+                {
+                    'date': settings['last_day_on'],
+                    'time_elapsed': self.time_elapsed
+                }
             )
-            program_now = program.program[current['weekday']][str(
-                current['hours']
-            )]
-            logger.debug('Program is now: {}'.format(program_now))
-            # program_vs_relay
-            if program_now:
-                if not heater_switch.stats:
-                    # start it
-                    logger.debug(f'Heater switch stats: {heater_switch.stats}')
-                    logger.debug('Received signal to turn heater ON.')
-                    heater_switch.on()
-                heater_switch.catch_sleep(time_to_wait)
-                return time_to_wait
-            else:
-                if heater_switch.stats:
-                    # stop it
-                    logger.debug('Received signal to turn heater OFF.')
-                    heater_switch.off()
-                heater_switch.catch_sleep(time_to_wait)
-                return 0
+        else:
+            time_elapsed_restore = datetime.datetime.strptime(
+                settings.get('time_elapsed', '0:00:00'), '%H:%M:%S'
+            )
+            self.time_elapsed = round(datetime.timedelta(
+            hours=time_elapsed_restore.hour,
+            minutes=time_elapsed_restore.minute,
+            seconds=time_elapsed_restore.second
+        ).total_seconds())
 
-    else:
-        if heater_switch.stats:
-            logger.debug('Received signal to turn heater OFF.')
-            heater_switch.off()
-        time.sleep(time_to_wait)
-        return 0
+        self.last_current = None
+
+        self.loop_count = 0
+
+
+    def poll(self, current):
+
+        settings = settings_handler.handler(
+            settings_path=self.settings_path,
+            settings_changes={
+                'time_elapsed': self.time_elapsed,
+                'last_day_on': current['formatted_date']
+            }
+        )
+        logger.debug('Settings handler in poller: {}'.format(settings))
+        manual = settings['manual']
+        auto = settings['auto']
+        prog_no = settings['program']
+        time_to_wait = settings['time_to_wait']
+        logger.debug('time to wait: {}'.format(time_to_wait))
+
+        if not self.loop_count or not self.loop_count % self.thermometer_poll:
+            self.thermometer.sendto(b'temps_req', (self.UDP_IP, self.UDP_port))
+            self.temperature = json.loads(
+                self.thermometer.recv(4096).decode()
+            )['celsius']
+        logger.info(
+            'Temperature from thermometer is: {}° celsius.'.format(
+                self.temperature
+            )
+        )
+
+        if self.temperature < settings['temperature']:
+            if manual:
+                if not self.heater_switch.stats: # heater is not ON
+                    self.heater_switch.on()
+                self.heater_switch.catch_sleep(time_to_wait)
+                return time_to_wait
+
+            elif auto:
+                program = Program(settings['program'])
+                logger.debug(
+                    'Loaded program {}.'.format(program.program_number)
+                )
+                logger.debug(
+                    "It is {} on {}.".format(
+                        current['formatted_time'],
+                        current['weekday'].title()
+                    )
+                )
+                program_now = program.program[current['weekday']][str(
+                    current['hours']
+                )]
+                logger.debug('Program is now: {}'.format(program_now))
+                # program_vs_relay
+                if program_now:
+                    if not self.heater_switch.stats:
+                        # start it
+                        logger.debug(
+                            'Heater switch stats: {}'.format(
+                                self.heater_switch.stats
+                            )
+                        )
+                        logger.debug('Received signal to turn heater ON.')
+                        self.heater_switch.on()
+                    self.heater_switch.catch_sleep(time_to_wait)
+                    return time_to_wait
+                else:
+                    if self.heater_switch.stats:
+                        # stop it
+                        logger.debug('Received signal to turn heater OFF.')
+                        self.heater_switch.off()
+                    self.heater_switch.catch_sleep(time_to_wait)
+                    return 0
+
+        else:
+            if heater_switch.stats:
+                logger.debug('Received signal to turn heater OFF.')
+                heater_switch.off()
+            time.sleep(time_to_wait)
+            return 0
 
 
 def main(settings_path):
 
-    heater_switch = Relay('36')
-    # parameters for UDP connection with thermometer
-    UDP_port = 4210
-    UDP_IP = '192.168.1.112'
-    thermometer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    thermometer.settimeout(1.0)
-    thermometer.bind(('', UDP_port))
-    thermometer_poll = 5
-    # load settings
-    settings = settings_handler.load_settings(settings_path)
-    if settings['last_day_on'] != util.get_now()['formatted_date']:
-        time_elapsed = 0
-        util.write_log(settings['logpath'],
-            {
-                'date': settings['last_day_on'],
-                'time_elapsed': time_elapsed
-            }
-        )
-    else:
-        time_elapsed_restore = datetime.datetime.strptime(
-            settings.get('time_elapsed', '0:00:00'), '%H:%M:%S'
-        )
-        time_elapsed = round(datetime.timedelta(
-        hours=time_elapsed_restore.hour,
-        minutes=time_elapsed_restore.minute,
-        seconds=time_elapsed_restore.second
-    ).total_seconds())
-
-    last_current = None
-
-    loop_count = 0
+    heater_poll = Poller(settings_path)
 
     while True:
 
         # check each loop for when we are in history
         current = util.get_now()
 
-        if last_current is not None and last_current['day'] != current['day']:
+        if (
+            heater_poll.last_current is not None and
+            heater_poll.last_current['day'] != current['day']
+        ):
             logger.info('Entered another day in history.')
             util.write_log(settings['logpath'],
                 {
                     'date': last_current['formatted_date'],
-                    'time_elapsed': time_elapsed
+                    'time_elapsed': heater_poll.time_elapsed
                 }
             )
-            time_elapsed = 0
+            heater_poll.time_elapsed = 0
 
-        time_elapsed += poll(
-            settings_path,
-            util.format_seconds(time_elapsed),
-            heater_switch,
-            current,
-            loop_count,
-            thermometer_poll,
-            UDP_port,
-            UDP_IP,
-            thermometer
-        )
-        last_current = current
-        loop_count += 1
+        heater_poll.time_elapsed += heater_poll.poll(current)
+        heater_poll.last_current = current
+        heater_poll.loop_count += 1
 
 
 if __name__ == '__main__':
