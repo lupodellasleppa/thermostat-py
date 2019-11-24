@@ -47,7 +47,7 @@ def create_parser():
     parser.add_argument(
         '-t', '--temperature',
         help='Insert the desired temperature when in manual mode.',
-        type=int
+        type=float
     )
 
     args = parser.parse_args()

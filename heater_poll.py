@@ -43,9 +43,9 @@ def poll(
     if not loop_count or not loop_count % thermometer_poll:
         thermometer.sendto(b'temps_req', (UDP_IP, UDP_port))
         temperature = json.loads(thermometer.recv(4096).decode())['celsius']
-        logger.info(
-            'Temperature from thermometer is: {}° celsius.'.format(temperature)
-        )
+    logger.info(
+        'Temperature from thermometer is: {}° celsius.'.format(temperature)
+    )
 
     if temperature < settings['temperature']:
         if manual:
