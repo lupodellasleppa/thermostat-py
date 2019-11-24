@@ -46,17 +46,6 @@ def poll(
             'Temperature from thermometer is: {}° celsius.'.format(temperature)
         )
 
-    logger.info(
-        'Room temperature: {}\n'
-        'Type of data: {}\n'
-        'Desired temperature: {}\n'
-        'Type of data: {}\n'.format(
-            temperature,
-            type(temperature),
-            settings['temperature'],
-            type(settings['temperature'])
-        )
-    )
     if temperature < settings['temperature']:
         if manual:
             if not heater_switch.stats: # heater is not ON
