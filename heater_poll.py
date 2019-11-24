@@ -105,7 +105,7 @@ def main(settings_path):
     # parameters for UDP connection with thermometer
     UDP_port = 4210
     UDP_IP = '192.168.1.112'
-    thermometer = socket.socket(socket.SF_INET, socket.SOCK_DGRAM)
+    thermometer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     thermometer.settimeout(1.0)
     thermometer.bind(('', UDP_port))
     thermometer_poll = 5
