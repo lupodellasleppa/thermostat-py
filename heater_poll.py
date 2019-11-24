@@ -30,22 +30,22 @@ class Poller():
         # load settings
         settings = settings_handler.load_settings(settings_path)
         if settings['last_day_on'] != util.get_now()['formatted_date']:
-            self.time_elapsed = util.format_seconds(0)
+            self.time_elapsed = 0
             util.write_log(settings['logpath'],
                 {
                     'date': settings['last_day_on'],
-                    'time_elapsed': self.time_elapsed
+                    'time_elapsed': util.format_seconds(self.time_elapsed)
                 }
             )
         else:
             time_elapsed_restore = datetime.datetime.strptime(
                 settings.get('time_elapsed', '0:00:00'), '%H:%M:%S'
             )
-            self.time_elapsed = util.format_seconds(round(datetime.timedelta(
+            self.time_elapsed = round(datetime.timedelta(
             hours=time_elapsed_restore.hour,
             minutes=time_elapsed_restore.minute,
             seconds=time_elapsed_restore.second
-        ).total_seconds()))
+        ).total_seconds())
 
         self.last_current = None
 
