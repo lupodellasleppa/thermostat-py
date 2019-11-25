@@ -4,7 +4,55 @@ import argparse
 import json
 import logging
 import os
+import sys
+
 import util
+
+
+'''
+Settings are made like this:
+
+{
+  "mode": {
+    "auto": bool,
+    "program": int,
+    "manual": bool,
+    "desired_temp": float
+  },
+  "temperatures": {
+    "room": float
+  },
+  "log": {
+    "loglevel": str,
+    "global_log": str,
+    "session_log": str,
+    "last_day_on": "YYYY-mm-dd",
+    "time_elapsed": "H:MM:SS"
+  },
+  "configs": {
+    "UDP_IP": str,
+    "UDP_port": int
+  }
+  "poll_intervals": {
+    "settings": int,
+    "temperature": int
+  }
+}
+
+OLD:
+{
+  "auto": true,
+  "loglevel": "debug",
+  "logpath": "/home/pi/raspb-scripts/log.json"
+  "manual": true,
+  "program": 0,
+  "temperature": 0,
+  "last_day_on": "2019-11-23",
+  "time_elapsed": "2:45:13",
+  "time_to_wait": 1
+}
+
+'''
 
 
 logger_name = 'thermostat'
@@ -111,27 +159,32 @@ def main(time_elapsed=None):
 
     settings_path = 'settings.json'
     settings_file = load_settings(settings_path)
+    # define all fields that can be changed using this module
     settings_changes = {
-        'auto': (
-            args.auto if args.auto is not None
-            else settings_file['auto']
-        ),
-        'loglevel': (
-            args.loglevel if args.loglevel is not None
-            else settings_file['loglevel']
-        ),
-        'manual': (
-            args.manual if args.manual is not None
-            else settings_file['manual']
-        ),
-        'program': (
-            args.program if args.program is not None
-            else settings_file['program']
-        ),
-        'temperature': (
-            args.temperature if args.temperature is not None
-            else settings_file['temperature']
-        )
+        'mode': {
+            'auto': (
+                args.auto if args.auto is not None
+                else settings_file['mode']['auto']
+            ),
+            'program': (
+                args.program if args.program is not None
+                else settings_file['mode']['program']
+            ),
+            'manual': (
+                args.manual if args.manual is not None
+                else settings_file['mode']['manual']
+            ),
+            'desired_temp': (
+                args.temperature if args.temperature is not None
+                else settings_file['mode']['temperature']
+            )
+        },
+        'log': {
+            'loglevel': (
+                args.loglevel if args.loglevel is not None
+                else settings_file['loglevel']
+            )
+        }
     }
 
     return handler(
@@ -147,18 +200,11 @@ def load_settings(settings_path):
 
     if not os.path.isfile(settings_path) or not os.stat(settings_path).st_size:
         logger.info('{} not found, creating.'.format(settings_path))
-        settings_file = {
-            'program': '0',
-            'auto': False,
-            'last_day_on': util.get_now()['formatted_date'],
-            'loglevel': 'INFO',
-            'manual': False,
-            'time_elapsed': '0:00:00',
-            'time_to_wait': 1
-        }
+        with open(os.path.join(sys.path[0], 'example_settings.json')) as f:
+            settings_file = json.load(f)
         with open(settings_path, 'w') as f:
             f.write(json.dumps(settings_file, indent=2))
-        logger.debug('Created settings.json file.')
+        logger.debug('Created new settings.json file from example.')
 
     with open(settings_path) as f:
         settings_file = json.load(f)
@@ -168,7 +214,7 @@ def load_settings(settings_path):
 
 def update_settings(settings_changes, settings_file, settings_path):
     '''
-    Write setting_changes to 'setting.json' file.
+    Write settings_changes to 'setting.json' file.
     Returns contents of the file in a python dictionary.
     '''
 
@@ -196,9 +242,20 @@ def handler(settings_path, settings_changes={}):
     logger.debug('Settings file read: {}'.format(settings_file))
     logger.debug('Settings before update: {}'.format(settings_changes))
 
-    settings_changes.update(
-        {k:v for k, v in settings_file.items() if k not in settings_changes}
-    )
+    # nested dict update of settings_changes
+    settings_changes = {
+        k:( # take outer from settings_file if not in settings_changes
+            {kk:v for kk, v in settings_file[k].items()}
+            if k not in settings_changes
+            else { # if exists in both go deeper
+                kk:( # if key not in settings_changes take v from settings_file
+                    v if kk not in settings_changes[k]
+                    else settings_changes[k][kk] # from settings_changes else
+                ) for kk, v in settings_file[k].items()
+            }
+        ) for k in settings_file
+    }
+
     logger.debug('Settings after update: {}'.format(settings_changes))
 
     return update_settings(settings_changes, settings_file, settings_path)
