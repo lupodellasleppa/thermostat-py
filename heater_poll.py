@@ -26,7 +26,7 @@ class Poller():
         self.thermometer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.thermometer.settimeout(self.thermometer_poll)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.thermometer.bind(('', self.UDP_port))
+        self.thermometer.connect((self.UDP_IP, self.UDP_port))
         self.temperature = None
         # load settings
         settings = settings_handler.load_settings(settings_path)
@@ -70,9 +70,7 @@ class Poller():
         logger.debug('time to wait: {}'.format(time_to_wait))
 
         if not self.loop_count or not self.loop_count % self.thermometer_poll:
-            self.thermometer.sendto(
-                b'temps_req', (self.UDP_IP, self.UDP_port)
-            )
+            self.thermometer.send(b'temps_req')
             try:
                 self.temperature = json.loads(
                     self.thermometer.recv(4096).decode()
