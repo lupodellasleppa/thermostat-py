@@ -22,11 +22,10 @@ class Poller():
         # parameters for UDP connection with thermometer
         self.UDP_port = 4210
         self.UDP_IP = '192.168.1.112'
-        self.thermometer_poll = 5
+        self.thermometer_poll = 900
         self.thermometer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.thermometer.settimeout(self.thermometer_poll)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.thermometer.connect((self.UDP_IP, self.UDP_port))
         self.temperature = None
         # load settings
         settings = settings_handler.load_settings(settings_path)
@@ -53,7 +52,7 @@ class Poller():
         self.loop_count = 0
 
 
-    def poll(self, current):
+    def poll(self, current, time_to_wait):
 
         settings = settings_handler.handler(
             settings_path=self.settings_path,
@@ -70,7 +69,7 @@ class Poller():
         logger.debug('time to wait: {}'.format(time_to_wait))
 
         if not self.loop_count or not self.loop_count % self.thermometer_poll:
-            self.thermometer.send(b'temps_req')
+            self.thermometer.sendto(b'temps_req', (self.UDP_IP, self.UDP_port))
             try:
                 self.temperature = json.loads(
                     self.thermometer.recv(4096).decode()
@@ -164,9 +163,10 @@ def main(settings_path):
             )
             heater_poll.time_elapsed = 0
 
-        heater_poll.time_elapsed += heater_poll.poll(current)
+        time_elapsed = heater_poll.poll(current)
+        heater_poll.time_elapsed += time_elapsed
+        heater_poll.loop_count += time_elapsed
         heater_poll.last_current = current
-        heater_poll.loop_count += 1
 
 
 if __name__ == '__main__':
