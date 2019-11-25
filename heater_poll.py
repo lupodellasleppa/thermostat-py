@@ -70,10 +70,15 @@ class Poller():
         logger.debug('time to wait: {}'.format(time_to_wait))
 
         if not self.loop_count or not self.loop_count % self.thermometer_poll:
-            self.thermometer.sendto(b'temps_req', (self.UDP_IP, self.UDP_port))
-            self.temperature = json.loads(
-                self.thermometer.recv(4096).decode()
-            )['celsius']
+            self.thermometer.sendto(
+                b'temps_req', (self.UDP_IP, self.UDP_port)
+            )
+            try:
+                self.temperature = json.loads(
+                    self.thermometer.recv(4096).decode()
+                )['celsius']
+            except socket.timeout:
+                self.loop_count -= 1
         logger.debug(
             'Temperature from thermometer is: {}° celsius.'.format(
                 self.temperature
