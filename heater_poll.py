@@ -34,7 +34,9 @@ class Poller():
             util.write_log(self.settings['logpath'],
                 {
                     'date': self.settings['last_day_on'],
-                    'time_elapsed': util.format_seconds(self.time_elapsed)
+                    'time_elapsed': util.format_seconds(
+                        self.settings['time_elapsed']
+                    )
                 }
             )
             self.time_elapsed = 0
