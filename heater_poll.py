@@ -27,6 +27,7 @@ class Poller():
         self.thermometer.settimeout(self.thermometer_poll)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.temperature = None
+        self.time_elapsed = None
         self.time_to_wait = None
         # load settings
         self.settings = settings_handler.load_settings(settings_path)
@@ -34,8 +35,12 @@ class Poller():
             util.write_log(self.settings['logpath'],
                 {
                     'date': self.settings['last_day_on'],
-                    'time_elapsed': util.format_seconds(
+                    'time_elapsed': (
                         self.settings['time_elapsed']
+                        if self.time_elapsed is None
+                        else util.format_seconds(
+                            self.time_elapsed
+                        )
                     )
                 }
             )
