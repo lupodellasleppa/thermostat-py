@@ -27,6 +27,7 @@ class Poller():
         self.thermometer.settimeout(self.thermometer_poll)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.temperature = None
+        self.time_to_wait = None
         # load settings
         self.settings = settings_handler.load_settings(settings_path)
         if self.settings['last_day_on'] != util.get_now()['formatted_date']:
@@ -65,8 +66,8 @@ class Poller():
         manual = self.settings['manual']
         auto = self.settings['auto']
         prog_no = self.settings['program']
-        time_to_wait = self.settings['time_to_wait']
-        logger.debug('time to wait: {}'.format(time_to_wait))
+        self.time_to_wait = self.settings['time_to_wait']
+        logger.debug('time to wait: {}'.format(self.time_to_wait))
 
         if not self.loop_count or not self.loop_count % self.thermometer_poll:
             self.thermometer.sendto(b'temps_req', (self.UDP_IP, self.UDP_port))
@@ -87,9 +88,9 @@ class Poller():
                 if not self.heater_switch.stats: # heater is not ON
                     self.heater_switch.on()
                 self.heater_switch.catch_sleep(
-                    time_to_wait, self.temperature
+                    self.time_to_wait, self.temperature
                 )
-                return time_to_wait
+                return self.time_to_wait
 
             elif auto:
                 program = Program(self.settings['program'])
@@ -118,16 +119,16 @@ class Poller():
                         logger.debug('Received signal to turn heater ON.')
                         self.heater_switch.on()
                     self.heater_switch.catch_sleep(
-                        time_to_wait, self.temperature
+                        self.time_to_wait, self.temperature
                     )
-                    return time_to_wait
+                    return self.time_to_wait
                 else:
                     if self.heater_switch.stats:
                         # stop it
                         logger.debug('Received signal to turn heater OFF.')
                         self.heater_switch.off()
                     self.heater_switch.catch_sleep(
-                        time_to_wait, self.temperature
+                        self.time_to_wait, self.temperature
                     )
                     return 0
 
@@ -136,7 +137,7 @@ class Poller():
                 logger.debug('Received signal to turn heater OFF.')
                 self.heater_switch.off()
             self.heater_switch.catch_sleep(
-                time_to_wait, self.temperature
+                self.time_to_wait, self.temperature
             )
             return 0
 
@@ -163,9 +164,8 @@ def main(settings_path):
             )
             heater_poll.time_elapsed = 0
 
-        time_elapsed = heater_poll.poll(current)
-        heater_poll.time_elapsed += time_elapsed
-        heater_poll.loop_count += time_elapsed
+        heater_poll.time_elapsed += heater_poll.poll(current)
+        heater_poll.loop_count += heater_poll.time_to_wait
         heater_poll.last_current = current
 
 
