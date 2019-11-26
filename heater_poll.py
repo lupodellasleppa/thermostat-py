@@ -27,6 +27,7 @@ class Poller():
         self.thermometer.settimeout(self.thermometer_poll)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.temperature = None
+        self.time_to_wait = None
         # load settings
         settings = settings_handler.load_settings(settings_path)
         if settings['last_day_on'] != util.get_now()['formatted_date']:
@@ -52,7 +53,7 @@ class Poller():
         self.loop_count = 0
 
 
-    def poll(self, current, time_to_wait):
+    def poll(self, current):
 
         settings = settings_handler.handler(
             settings_path=self.settings_path,
@@ -65,7 +66,7 @@ class Poller():
         manual = settings['manual']
         auto = settings['auto']
         prog_no = settings['program']
-        time_to_wait = settings['time_to_wait']
+        self.time_to_wait = settings['time_to_wait']
         logger.debug('time to wait: {}'.format(time_to_wait))
 
         if not self.loop_count or not self.loop_count % self.thermometer_poll:
@@ -163,9 +164,8 @@ def main(settings_path):
             )
             heater_poll.time_elapsed = 0
 
-        time_elapsed = heater_poll.poll(current)
-        heater_poll.time_elapsed += time_elapsed
-        heater_poll.loop_count += time_elapsed
+        heater_poll.time_elapsed += heater_poll.poll(current)
+        heater_poll.loop_count += heater_poll.time_to_wait
         heater_poll.last_current = current
 
 
