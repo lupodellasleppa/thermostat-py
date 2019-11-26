@@ -28,18 +28,18 @@ class Poller():
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.temperature = None
         # load settings
-        settings = settings_handler.load_settings(settings_path)
-        if settings['last_day_on'] != util.get_now()['formatted_date']:
-            self.time_elapsed = 0
-            util.write_log(settings['logpath'],
+        self.settings = settings_handler.load_settings(settings_path)
+        if self.settings['last_day_on'] != util.get_now()['formatted_date']:
+            util.write_log(self.settings['logpath'],
                 {
-                    'date': settings['last_day_on'],
+                    'date': self.settings['last_day_on'],
                     'time_elapsed': util.format_seconds(self.time_elapsed)
                 }
             )
+            self.time_elapsed = 0
         else:
             time_elapsed_restore = datetime.datetime.strptime(
-                settings.get('time_elapsed', '0:00:00'), '%H:%M:%S'
+                self.settings.get('time_elapsed', '0:00:00'), '%H:%M:%S'
             )
             self.time_elapsed = round(datetime.timedelta(
             hours=time_elapsed_restore.hour,
@@ -52,20 +52,20 @@ class Poller():
         self.loop_count = 0
 
 
-    def poll(self, current, time_to_wait):
+    def poll(self, current):
 
-        settings = settings_handler.handler(
+        self.settings = settings_handler.handler(
             settings_path=self.settings_path,
             settings_changes={
                 'time_elapsed': util.format_seconds(self.time_elapsed),
                 'last_day_on': current['formatted_date']
             }
         )
-        logger.debug('Settings handler in poller: {}'.format(settings))
-        manual = settings['manual']
-        auto = settings['auto']
-        prog_no = settings['program']
-        time_to_wait = settings['time_to_wait']
+        logger.debug('Settings handler in poller: {}'.format(self.settings))
+        manual = self.settings['manual']
+        auto = self.settings['auto']
+        prog_no = self.settings['program']
+        time_to_wait = self.settings['time_to_wait']
         logger.debug('time to wait: {}'.format(time_to_wait))
 
         if not self.loop_count or not self.loop_count % self.thermometer_poll:
@@ -82,7 +82,7 @@ class Poller():
             )
         )
 
-        if self.temperature < settings['temperature']:
+        if self.temperature < self.settings['temperature']:
             if manual:
                 if not self.heater_switch.stats: # heater is not ON
                     self.heater_switch.on()
@@ -92,7 +92,7 @@ class Poller():
                 return time_to_wait
 
             elif auto:
-                program = Program(settings['program'])
+                program = Program(self.settings['program'])
                 logger.debug(
                     'Loaded program {}.'.format(program.program_number)
                 )
@@ -155,7 +155,7 @@ def main(settings_path):
             heater_poll.last_current['day'] != current['day']
         ):
             logger.info('Entered another day in history.')
-            util.write_log(settings['logpath'],
+            util.write_log(heater_poll.settings['logpath'],
                 {
                     'date': last_current['formatted_date'],
                     'time_elapsed': heater_poll.time_elapsed
