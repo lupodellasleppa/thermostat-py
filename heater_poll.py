@@ -166,13 +166,13 @@ def main(settings_path):
             util.write_log(heater_poll.settings['logpath'],
                 {
                     'date': heater_poll.last_current['formatted_date'],
-                    'time_elapsed': heater_poll.time_elapsed
+                    'time_elapsed': util.format_seconds(heater_poll.time_elapsed)
                 }
             )
             heater_poll.time_elapsed = 0
 
         heater_poll.time_elapsed += heater_poll.poll(current)
-        heater_poll.loop_count += util.format_date(heater_poll.time_to_wait)
+        heater_poll.loop_count += heater_poll.time_to_wait
         heater_poll.last_current = current
 
 
