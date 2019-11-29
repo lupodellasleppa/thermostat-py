@@ -165,7 +165,7 @@ def main(settings_path):
             logger.info('Entered another day in history.')
             util.write_log(heater_poll.settings['logpath'],
                 {
-                    'date': last_current['formatted_date'],
+                    'date': heater_poll.last_current['formatted_date'],
                     'time_elapsed': heater_poll.time_elapsed
                 }
             )
