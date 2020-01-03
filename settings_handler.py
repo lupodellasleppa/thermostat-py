@@ -6,36 +6,34 @@ import logging
 import os
 import sys
 
-import util
-
 
 '''
 Settings are made like this:
 
 {
   "mode": {
-    "auto": bool,
-    "program": int,
-    "manual": bool,
-    "desired_temp": float
+    "auto": false,
+    "program": 0,
+    "manual": false,
+    "desired_temp": 21.5
   },
   "temperatures": {
-    "room": float
+    "room": 16.0
   },
   "log": {
-    "loglevel": str,
-    "global_log": str,
-    "session_log": str,
-    "last_day_on": "YYYY-mm-dd",
-    "time_elapsed": "H:MM:SS"
+    "loglevel": INFO,
+    "global": "./log.json",
+    "session": str,
+    "last_day_on": "1970-01-01",
+    "time_elapsed": "0:00:00"
   },
   "configs": {
-    "UDP_IP": str,
-    "UDP_port": int
+    "UDP_IP": "127.0.0.1",
+    "UDP_port": 2222
   }
   "poll_intervals": {
-    "settings": int,
-    "temperature": int
+    "settings": 1,
+    "temperature": 5
   }
 }
 
@@ -262,4 +260,11 @@ def handler(settings_path, settings_changes={}):
 
 
 if __name__ == '__main__':
+
+    import util
+
     main()
+
+else:
+
+    from . import util
