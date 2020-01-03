@@ -4,7 +4,6 @@ import argparse
 import json
 import logging
 import os
-import util
 
 
 logger_name = 'thermostat'
@@ -205,4 +204,11 @@ def handler(settings_path, settings_changes={}):
 
 
 if __name__ == '__main__':
+
+    import util
+
     main()
+
+else:
+
+    from . import util
