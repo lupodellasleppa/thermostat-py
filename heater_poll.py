@@ -28,7 +28,6 @@ class Poller():
         self.thermometer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.thermometer.settimeout(self.thermometer_poll)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.thermometer.connect((self.UDP_IP, self.UDP_port))
         self.temperature = None
         if settings['log']['last_day_on'] != util.get_now()['formatted_date']:
             self.time_elapsed = 0
@@ -38,6 +37,7 @@ class Poller():
                     'time_elapsed': util.format_seconds(self.time_elapsed)
                 }
             )
+            self.time_elapsed = 0
         else:
             time_elapsed_restore = datetime.datetime.strptime(
                 settings['log'].get('time_elapsed', '0:00:00'), '%H:%M:%S'
@@ -55,7 +55,7 @@ class Poller():
 
     def poll(self, current):
 
-        settings = settings_handler.handler(
+        self.settings = settings_handler.handler(
             settings_path=self.settings_path,
             settings_changes={
                 'log': {
@@ -72,7 +72,7 @@ class Poller():
         logger.debug('time to wait: {}'.format(time_to_wait))
 
         if not self.loop_count or not self.loop_count % self.thermometer_poll:
-            self.thermometer.send(b'temps_req')
+            self.thermometer.sendto(b'temps_req', (self.UDP_IP, self.UDP_port))
             try:
                 self.temperature = json.loads(
                     self.thermometer.recv(4096).decode()
@@ -90,9 +90,9 @@ class Poller():
                 if not self.heater_switch.stats: # heater is not ON
                     self.heater_switch.on()
                 self.heater_switch.catch_sleep(
-                    time_to_wait, self.temperature
+                    self.time_to_wait, self.temperature
                 )
-                return time_to_wait
+                return self.time_to_wait
 
             elif auto:
                 program = Program(settings['mode']['program'])
@@ -121,16 +121,16 @@ class Poller():
                         logger.debug('Received signal to turn heater ON.')
                         self.heater_switch.on()
                     self.heater_switch.catch_sleep(
-                        time_to_wait, self.temperature
+                        self.time_to_wait, self.temperature
                     )
-                    return time_to_wait
+                    return self.time_to_wait
                 else:
                     if self.heater_switch.stats:
                         # stop it
                         logger.debug('Received signal to turn heater OFF.')
                         self.heater_switch.off()
                     self.heater_switch.catch_sleep(
-                        time_to_wait, self.temperature
+                        self.time_to_wait, self.temperature
                     )
                     return 0
 
@@ -139,7 +139,7 @@ class Poller():
                 logger.debug('Received signal to turn heater OFF.')
                 self.heater_switch.off()
             self.heater_switch.catch_sleep(
-                time_to_wait, self.temperature
+                self.time_to_wait, self.temperature
             )
             return 0
 
@@ -160,15 +160,15 @@ def main(settings_path):
             logger.info('Entered another day in history.')
             util.write_log(settings['log']['global'],
                 {
-                    'date': last_current['formatted_date'],
-                    'time_elapsed': heater_poll.time_elapsed
+                    'date': heater_poll.last_current['formatted_date'],
+                    'time_elapsed': util.format_seconds(heater_poll.time_elapsed)
                 }
             )
             heater_poll.time_elapsed = 0
 
         heater_poll.time_elapsed += heater_poll.poll(current)
+        heater_poll.loop_count += heater_poll.time_to_wait
         heater_poll.last_current = current
-        heater_poll.loop_count += 1
 
 
 if __name__ == '__main__':

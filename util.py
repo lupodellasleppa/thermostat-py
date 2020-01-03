@@ -81,7 +81,7 @@ def write_log(log_path, data):
             log_file = json.load(f)
         log_file.append(data)
         with open(log_path, 'w') as f:
-            f.write(json.dumps(data, indent=2))
+            f.write(json.dumps(log_file, indent=2))
             f.write('\n')
 
     return 'Wrote log to file.'
