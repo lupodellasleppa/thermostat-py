@@ -3,3 +3,6 @@ program*.json
 __pycache__/
 settings.json
 log.json
+get_room_temp.py
+
+.gitignore
