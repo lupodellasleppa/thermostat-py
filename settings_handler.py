@@ -7,51 +7,32 @@ import os
 import sys
 
 
-'''
-Settings are made like this:
-
-{
+example_settings = {
   "mode": {
-    "auto": false,
+    "auto": False,
     "program": 0,
-    "manual": false,
+    "manual": False,
     "desired_temp": 21.5
   },
   "temperatures": {
     "room": 16.0
   },
   "log": {
-    "loglevel": INFO,
+    "loglevel": "INFO",
     "global": "./log.json",
-    "session": str,
+    "session": "",
     "last_day_on": "1970-01-01",
     "time_elapsed": "0:00:00"
   },
   "configs": {
     "UDP_IP": "127.0.0.1",
     "UDP_port": 2222
-  }
+  },
   "poll_intervals": {
     "settings": 1,
     "temperature": 5
   }
 }
-
-OLD:
-{
-  "auto": true,
-  "loglevel": "debug",
-  "logpath": "/home/pi/raspb-scripts/log.json"
-  "manual": true,
-  "program": 0,
-  "temperature": 0,
-  "last_day_on": "2019-11-23",
-  "time_elapsed": "2:45:13",
-  "time_to_wait": 1
-}
-
-'''
-
 
 logger_name = 'thermostat'
 logger = logging.getLogger(logger_name)
@@ -198,10 +179,8 @@ def load_settings(settings_path):
 
     if not os.path.isfile(settings_path) or not os.stat(settings_path).st_size:
         logger.info('{} not found, creating.'.format(settings_path))
-        with open(os.path.join(sys.path[0], 'example_settings.json')) as f:
-            settings_file = json.load(f)
         with open(settings_path, 'w') as f:
-            f.write(json.dumps(settings_file, indent=2))
+            json.dump(example_settings, f, indent=2)
         logger.debug('Created new settings.json file from example.')
 
     with open(settings_path) as f:
