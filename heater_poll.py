@@ -22,8 +22,8 @@ class Poller():
         # load settings
         settings = settings_handler.load_settings(settings_path)
         # parameters for UDP connection with thermometer
-        self.UDP_port = settings['configs']['UDP_IP']
-        self.UDP_IP = settings['configs']['UDP_port']
+        self.UDP_IP = settings['configs']['UDP_IP']
+        self.UDP_port = settings['configs']['UDP_port']
         self.thermometer_poll = settings['poll_intervals']['settings']
         self.thermometer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.thermometer.settimeout(self.thermometer_poll)
@@ -55,7 +55,7 @@ class Poller():
 
     def poll(self, current):
 
-        self.settings = settings_handler.handler(
+        settings = settings_handler.handler(
             settings_path=self.settings_path,
             settings_changes={
                 'log': {
@@ -185,7 +185,7 @@ if __name__ == '__main__':
     logger = logging.getLogger(logger_name)
     logger.setLevel(
         util.get_loglevel(
-            settings_handler.load_settings(args.settings_path)['loglevel']
+            settings_handler.load_settings(args.settings_path)['log']['loglevel']
         )
     )
 

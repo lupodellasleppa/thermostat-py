@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 
+import util
 
 example_settings = {
   "mode": {
@@ -240,10 +241,4 @@ def handler(settings_path, settings_changes={}):
 
 if __name__ == '__main__':
 
-    import util
-
     main()
-
-else:
-
-    from . import util
