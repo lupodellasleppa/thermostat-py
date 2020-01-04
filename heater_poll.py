@@ -20,27 +20,27 @@ class Poller():
         self.settings_path = settings_path
         self.heater_switch = Relay('36')
         # load settings
-        settings = settings_handler.load_settings(settings_path)
+        self.settings = settings_handler.load_settings(settings_path)
         # parameters for UDP connection with thermometer
-        self.UDP_IP = settings['configs']['UDP_IP']
-        self.UDP_port = settings['configs']['UDP_port']
-        self.thermometer_poll = settings['poll_intervals']['settings']
+        self.UDP_IP = self.settings['configs']['UDP_IP']
+        self.UDP_port = self.settings['configs']['UDP_port']
+        self.thermometer_poll = self.settings['poll_intervals']['settings']
         self.thermometer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.thermometer.settimeout(self.thermometer_poll)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.temperature = None
-        if settings['log']['last_day_on'] != util.get_now()['formatted_date']:
+        if self.settings['log']['last_day_on'] != util.get_now()['formatted_date']:
             self.time_elapsed = 0
-            util.write_log(settings['log']['global'],
+            util.write_log(self.settings['log']['global'],
                 {
-                    'date': settings['log']['last_day_on'],
+                    'date': self.settings['log']['last_day_on'],
                     'time_elapsed': util.format_seconds(self.time_elapsed)
                 }
             )
             self.time_elapsed = 0
         else:
             time_elapsed_restore = datetime.datetime.strptime(
-                settings['log'].get('time_elapsed', '0:00:00'), '%H:%M:%S'
+                self.settings['log'].get('time_elapsed', '0:00:00'), '%H:%M:%S'
             )
             self.time_elapsed = round(datetime.timedelta(
             hours=time_elapsed_restore.hour,
@@ -55,7 +55,7 @@ class Poller():
 
     def poll(self, current):
 
-        settings = settings_handler.handler(
+        self.settings = settings_handler.handler(
             settings_path=self.settings_path,
             settings_changes={
                 'log': {
@@ -64,12 +64,12 @@ class Poller():
                 }
             }
         )
-        logger.debug('Settings handler in poller: {}'.format(settings))
-        manual = settings['mode']['manual']
-        auto = settings['mode']['auto']
-        prog_no = settings['mode']['program']
-        time_to_wait = settings['poll_intervals']['settings']
-        logger.debug('time to wait: {}'.format(time_to_wait))
+        logger.debug('Settings handler in poller: {}'.format(self.settings))
+        manual = self.settings['mode']['manual']
+        auto = self.settings['mode']['auto']
+        prog_no = self.settings['mode']['program']
+        self.time_to_wait = self.settings['poll_intervals']['settings']
+        logger.debug('time to wait: {}'.format(self.time_to_wait))
 
         if not self.loop_count or not self.loop_count % self.thermometer_poll:
             self.thermometer.sendto(b'temps_req', (self.UDP_IP, self.UDP_port))
@@ -85,7 +85,7 @@ class Poller():
             )
         )
 
-        if self.temperature < settings['mode']['desired_temp']:
+        if self.temperature < self.settings['mode']['desired_temp']:
             if manual:
                 if not self.heater_switch.stats: # heater is not ON
                     self.heater_switch.on()
@@ -95,7 +95,7 @@ class Poller():
                 return self.time_to_wait
 
             elif auto:
-                program = Program(settings['mode']['program'])
+                program = Program(self.settings['mode']['program'])
                 logger.debug(
                     'Loaded program {}.'.format(program.program_number)
                 )
@@ -158,10 +158,12 @@ def main(settings_path):
             heater_poll.last_current['day'] != current['day']
         ):
             logger.info('Entered another day in history.')
-            util.write_log(settings['log']['global'],
+            util.write_log(heater_poll.settings['log']['global'],
                 {
                     'date': heater_poll.last_current['formatted_date'],
-                    'time_elapsed': util.format_seconds(heater_poll.time_elapsed)
+                    'time_elapsed': util.format_seconds(
+                        heater_poll.time_elapsed
+                    )
                 }
             )
             heater_poll.time_elapsed = 0
@@ -185,7 +187,9 @@ if __name__ == '__main__':
     logger = logging.getLogger(logger_name)
     logger.setLevel(
         util.get_loglevel(
-            settings_handler.load_settings(args.settings_path)['log']['loglevel']
+            settings_handler.load_settings(
+                args.settings_path
+            )['log']['loglevel']
         )
     )
 
