@@ -134,7 +134,13 @@ class Poller():
                 return self.turn_off()
 
         else: # Room temperature satisfies desired temperature
-            return self.turn_off()
+        # Catch sleep for at least 180 seconds to prevent quick
+        # switching on and off of heater
+            logger.info(
+                'Reached desired temperature.'
+                ' Turning off heater and waiting 180 seconds before next poll.'
+            )
+            return self.turn_off(180)
 
     def turn_on(self):
 
@@ -153,14 +159,17 @@ class Poller():
 
         return self.time_to_wait
 
-    def turn_off(self):
+    def turn_off(self, seconds=None):
+
+        if seconds is None:
+            seconds = self.time_to_wait
 
         if self.heater_switch.stats:
             # stop it
             logger.debug('Received signal to turn heater OFF.')
             self.heater_switch.off()
         self.heater_switch.catch_sleep(
-            self.time_to_wait, self.temperature
+            seconds, self.temperature
         )
 
         return 0
