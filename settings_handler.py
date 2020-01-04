@@ -156,13 +156,13 @@ def main(time_elapsed=None):
             ),
             'desired_temp': (
                 args.temperature if args.temperature is not None
-                else settings_file['mode']['temperature']
+                else settings_file['mode']['desired_temp']
             )
         },
         'log': {
             'loglevel': (
                 args.loglevel if args.loglevel is not None
-                else settings_file['loglevel']
+                else settings_file['log']['loglevel']
             )
         }
     }
