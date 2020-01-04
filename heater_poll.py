@@ -21,7 +21,7 @@ class Poller():
         self.heater_switch = Relay('36')
         # load settings
         self.settings = settings_handler.load_settings(settings_path)
-        # parameters for UDP connection with thermometer
+        # parameters for UDP communication with thermometer
         self.UDP_IP = self.settings['configs']['UDP_IP']
         self.UDP_port = self.settings['configs']['UDP_port']
         self.thermometer_poll = self.settings['poll_intervals']['settings']
@@ -54,6 +54,16 @@ class Poller():
 
 
     def poll(self, current):
+        '''
+        Poll the settings.json file and behaves accordingly:
+         - First sends a request for room temperature if self.loop_count is 0
+           or a multiple of self.thermometer_poll (from settings file)
+         - If room temperature is lower than desired_temp:
+            - First checks if manual is ON
+            - Then checks for auto mode
+
+        Returns self.time_to_wait when heater is turned ON, 0 when OFF
+        '''
 
         self.settings = settings_handler.handler(
             settings_path=self.settings_path,
@@ -77,6 +87,14 @@ class Poller():
                 self.temperature = json.loads(
                     self.thermometer.recv(4096).decode()
                 )['celsius']
+                self.settings = settings_handler.handler(
+                    settings_path=self.settings_path,
+                    settings_changes={
+                        'temperatures': {
+                            'room': self.temperature
+                        }
+                    }
+                )
             except socket.timeout:
                 self.loop_count -= 1
         logger.debug(
@@ -85,15 +103,12 @@ class Poller():
             )
         )
 
+        # Room temperature is lower than desired temperature
         if self.temperature < self.settings['mode']['desired_temp']:
+            # MANUAL MODE
             if manual:
-                if not self.heater_switch.stats: # heater is not ON
-                    self.heater_switch.on()
-                self.heater_switch.catch_sleep(
-                    self.time_to_wait, self.temperature
-                )
-                return self.time_to_wait
-
+                return self.turn_on()
+            # AUTO MODE
             elif auto:
                 program = Program(self.settings['mode']['program'])
                 logger.debug(
@@ -107,50 +122,48 @@ class Poller():
                 )
                 program_now = program.program[current['weekday']][str(
                     current['hours']
-                )]
+                )] # Synchronize to current day and hour in program
                 logger.debug('Program is now: {}'.format(program_now))
-                # program_vs_relay
-                if program_now:
-                    if not self.heater_switch.stats:
-                        # start it
-                        logger.debug(
-                            'Heater switch stats: {}'.format(
-                                self.heater_switch.stats
-                            )
-                        )
-                        logger.debug('Received signal to turn heater ON.')
-                        self.heater_switch.on()
-                    self.heater_switch.catch_sleep(
-                        self.time_to_wait, self.temperature
-                    )
-                    return self.time_to_wait
-                else:
-                    if self.heater_switch.stats:
-                        # stop it
-                        logger.debug('Received signal to turn heater OFF.')
-                        self.heater_switch.off()
-                    self.heater_switch.catch_sleep(
-                        self.time_to_wait, self.temperature
-                    )
-                    return 0
-            else:
-                if self.heater_switch.stats:
-                    # stop it
-                    logger.debug('Received signal to turn heater OFF.')
-                    self.heater_switch.off()
-                self.heater_switch.catch_sleep(
-                    self.time_to_wait, self.temperature
-                )
-                return 0
 
-        else:
-            if self.heater_switch.stats:
-                logger.debug('Received signal to turn heater OFF.')
-                self.heater_switch.off()
-            self.heater_switch.catch_sleep(
-                self.time_to_wait, self.temperature
+                if program_now: # Day and hour in program are set to True
+                    return self.turn_on()
+                else:
+                    return self.turn_off()
+
+            else: # BOTH MANUAL AND AUTO ARE OFF
+                return self.turn_off()
+
+        else: # Room temperature satisfies desired temperature
+            return self.turn_off()
+
+    def turn_on(self):
+
+        if not self.heater_switch.stats:
+            # Start it
+            logger.debug(
+                'Heater switch stats: {}'.format(
+                    self.heater_switch.stats
+                )
             )
-            return 0
+            logger.debug('Received signal to turn heater ON.')
+            self.heater_switch.on()
+        self.heater_switch.catch_sleep(
+            self.time_to_wait, self.temperature
+        )
+
+        return self.time_to_wait
+
+    def turn_off(self):
+
+        if self.heater_switch.stats:
+            # stop it
+            logger.debug('Received signal to turn heater OFF.')
+            self.heater_switch.off()
+        self.heater_switch.catch_sleep(
+            self.time_to_wait, self.temperature
+        )
+
+        return 0
 
 
 def main(settings_path):
