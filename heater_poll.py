@@ -21,14 +21,15 @@ class Poller():
         self.heater_switch = Relay('36')
         # load settings
         self.settings = settings_handler.load_settings(settings_path)
+        self.thermometer_poll = self.settings['poll_intervals']['temperature']
+        self.time_to_wait = self.settings['poll_intervals']['settings']
         # parameters for UDP communication with thermometer
         self.UDP_IP = self.settings['configs']['UDP_IP']
         self.UDP_port = self.settings['configs']['UDP_port']
-        self.thermometer_poll = self.settings['poll_intervals']['settings']
         self.thermometer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.thermometer.settimeout(self.thermometer_poll)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.temperature = None
+        self.temperature = self.settings['temperatures']['room']
         if self.settings['log']['last_day_on'] != util.get_now()['formatted_date']:
             self.time_elapsed = 0
             util.write_log(self.settings['log']['global'],
@@ -78,30 +79,9 @@ class Poller():
         manual = self.settings['mode']['manual']
         auto = self.settings['mode']['auto']
         prog_no = self.settings['mode']['program']
-        self.time_to_wait = self.settings['poll_intervals']['settings']
         logger.debug('time to wait: {}'.format(self.time_to_wait))
 
-        if not self.loop_count or not self.loop_count % self.thermometer_poll:
-            self.thermometer.sendto(b'temps_req', (self.UDP_IP, self.UDP_port))
-            try:
-                self.temperature = json.loads(
-                    self.thermometer.recv(4096).decode()
-                )['celsius']
-                self.settings = settings_handler.handler(
-                    settings_path=self.settings_path,
-                    settings_changes={
-                        'temperatures': {
-                            'room': self.temperature
-                        }
-                    }
-                )
-            except socket.timeout:
-                self.loop_count -= 1
-        logger.debug(
-            'Temperature from thermometer is: {}° celsius.'.format(
-                self.temperature
-            )
-        )
+        self.temperature = self.request_temperatures()
 
         # Room temperature is lower than desired temperature
         if self.temperature < self.settings['mode']['desired_temp']:
@@ -153,6 +133,7 @@ class Poller():
             )
             logger.debug('Received signal to turn heater ON.')
             self.heater_switch.on()
+
         self.heater_switch.catch_sleep(
             self.time_to_wait, self.temperature
         )
@@ -173,6 +154,48 @@ class Poller():
         )
 
         return 0
+
+    def request_temperatures(self):
+        '''
+        Send a request for temperatures to ESP8266.
+        Response should be a JSON of the type:
+
+        {
+          "celsius": float
+        }
+
+        If request goes into timeout request is skipped.
+        If skips first request so self.temperature is None, repeats the request.
+        If request is succesful and new temperature is different than what's
+        reported in settings.json file, update the file.
+        '''
+
+        if not self.loop_count or not self.loop_count % self.thermometer_poll:
+            self.thermometer.sendto(b'temps_req', (self.UDP_IP, self.UDP_port))
+            try:
+                self.temperature = json.loads(
+                    self.thermometer.recv(4096).decode()
+                )['celsius']
+            except socket.timeout:
+                self.loop_count -= 1 # TODO: check if this is valid
+            # if not isinstance(self.temperature, float):
+            #     self.request_temperatures()
+            if self.temperature != self.settings['temperatures']['room']:
+                self.settings = settings_handler.handler(
+                    settings_path=self.settings_path,
+                    settings_changes={
+                        'temperatures': {
+                            'room': self.temperature
+                        }
+                    }
+                )
+        logger.debug(
+            'Temperature from thermometer is: {}° celsius.'.format(
+                self.temperature
+            )
+        )
+
+        return self.temperature
 
 
 def main(settings_path):
