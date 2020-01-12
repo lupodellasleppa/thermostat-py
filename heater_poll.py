@@ -140,7 +140,11 @@ class Poller():
 
         return self.time_to_wait
 
-    def turn_off(self, seconds=None):
+    def turn_off(self, seconds=None, reset=False):
+
+        if reset:
+            seconds = 180
+            self.loop_count = -1
 
         if seconds is None:
             seconds = self.time_to_wait
@@ -170,16 +174,35 @@ class Poller():
         reported in settings.json file, update the file.
         '''
 
+        logger.info(
+            'Loop count: {}; thermometer poll: {}; read: {}.'.format(
+                self.loop_count,
+                self.thermometer_poll,
+                not self.loop_count % self.thermometer_poll
+            )
+        )
+
+        is_int = isinstance(self.temperature, int)
+        is_float = isinstance(self.temperature, float)
+        is_number = any([is_int, is_float])
+
         if not self.loop_count or not self.loop_count % self.thermometer_poll:
             self.thermometer.sendto(b'temps_req', (self.UDP_IP, self.UDP_port))
+
             try:
                 self.temperature = json.loads(
                     self.thermometer.recv(4096).decode()
                 )['celsius']
+
+                self.loop_count = 0
+
             except socket.timeout:
-                self.loop_count -= 1 # TODO: check if this is valid
-            # if not isinstance(self.temperature, float):
-            #     self.request_temperatures()
+
+                self.loop_count = -1
+
+            if not is_number:
+                self.request_temperatures()
+
             if self.temperature != self.settings['temperatures']['room']:
                 self.settings = settings_handler.handler(
                     settings_path=self.settings_path,
