@@ -53,6 +53,8 @@ class Poller():
 
         self.loop_count = 0
 
+        self.count_start = time.perf_counter()
+
 
     def poll(self, current):
         '''
@@ -65,6 +67,8 @@ class Poller():
 
         Returns self.time_to_wait when heater is turned ON, 0 when OFF
         '''
+
+        self.count_start = time.perf_counter()
 
         self.settings = settings_handler.handler(
             settings_path=self.settings_path,
@@ -138,7 +142,7 @@ class Poller():
             self.time_to_wait, self.temperature
         )
 
-        return self.time_to_wait
+        return time.perf_counter() - self.count_start
 
     def turn_off(self, seconds=None, reset=False):
 
@@ -182,10 +186,6 @@ class Poller():
             )
         )
 
-        is_int = isinstance(self.temperature, int)
-        is_float = isinstance(self.temperature, float)
-        is_number = any([is_int, is_float])
-
         if not self.loop_count or not self.loop_count % self.thermometer_poll:
             self.thermometer.sendto(b'temps_req', (self.UDP_IP, self.UDP_port))
 
@@ -199,9 +199,6 @@ class Poller():
             except socket.timeout:
 
                 self.loop_count = -1
-
-            if not is_number:
-                self.request_temperatures()
 
             if self.temperature != self.settings['temperatures']['room']:
                 self.settings = settings_handler.handler(
@@ -227,6 +224,8 @@ def main(settings_path):
 
     while True:
 
+        start = time.perf_counter()
+
         # check each loop for when we are in history
         current = util.get_now()
 
@@ -245,7 +244,8 @@ def main(settings_path):
             )
             heater_poll.time_elapsed = 0
 
-        heater_poll.time_elapsed += heater_poll.poll(current)
+        call = time.perf_counter() - start
+        heater_poll.time_elapsed += (heater_poll.poll(current) + call)
         heater_poll.loop_count += heater_poll.time_to_wait
         heater_poll.last_current = current
 
