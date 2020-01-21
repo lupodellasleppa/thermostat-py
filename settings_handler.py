@@ -20,7 +20,7 @@ example_settings = {
   },
   "log": {
     "loglevel": "INFO",
-    "global": "./log.json",
+    "global": os.path.join(os.getcwd(), 'log.json'),
     "session": "",
     "last_day_on": "1970-01-01",
     "time_elapsed": "0:00:00"
