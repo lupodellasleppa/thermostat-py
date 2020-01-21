@@ -88,6 +88,11 @@ def write_log(log_path, data):
 
 
 def format_seconds(seconds):
+    '''
+    Takes a quantity of seconds (can be float) as parameter,
+    rounds it, and returns a formatted string of the kind
+    H:mm:SS
+    '''
 
     return str(datetime.timedelta(
         seconds=round(seconds)
@@ -110,3 +115,15 @@ def five_o(time_to_wait, minutes=0, seconds=0, microseconds=0):
         time_to_wait -= float(f'0.{microseconds:0>6}')
 
     return time_to_wait
+
+def is_number(presumed_number):
+    '''
+    Return true if given param is a number (int or float)
+    '''
+
+    is_int = isinstance(presumed_number, int)
+    is_float = isinstance(presumed_number, float)
+
+    return any(
+        [is_int, is_float]
+    )
