@@ -27,7 +27,7 @@ class Poller():
         self.UDP_IP = self.settings['configs']['UDP_IP']
         self.UDP_port = self.settings['configs']['UDP_port']
         self.thermometer = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.thermometer.settimeout(self.thermometer_poll)
+        self.thermometer.settimeout(1)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.temperature = self.settings['temperatures']['room']
         if self.settings['log']['last_day_on'] != util.get_now()['formatted_date']:
@@ -124,7 +124,7 @@ class Poller():
                 'Reached desired temperature.'
                 ' Turning off heater and waiting 180 seconds before next poll.'
             )
-            return self.turn_off(180)
+            return self.turn_off(reset=True)
 
     def turn_on(self):
 
