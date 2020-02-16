@@ -132,7 +132,7 @@ class Poller():
                 return self.turn_on()
             # Value in program is float and greater than actual temperature
             elif (
-                isinstance(program_now, float)
+                isinstance(program_now, float) or isinstance(program_now, int)
                 and self.temperature < program_now
             ):
                 return self.turn_on()
