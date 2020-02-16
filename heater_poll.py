@@ -124,6 +124,12 @@ class Poller():
             )]
             logger.debug('Program is now: {}'.format(program_now))
 
+            program_now_is_number = (
+                isinstance(program_now, float)
+                or
+                isinstance(program_now, int)
+            )
+
             # Value in program is bool and set to True
             if (
                 program_now is True
@@ -132,8 +138,7 @@ class Poller():
                 return self.turn_on()
             # Value in program is float and greater than actual temperature
             elif (
-                isinstance(program_now, float) or isinstance(program_now, int)
-                and self.temperature < program_now
+                program_now_is_number and self.temperature < program_now
             ):
                 return self.turn_on()
             # Room temperature satisfies desired temperature
@@ -142,8 +147,7 @@ class Poller():
                     program_now is True
                     and self.temperature >= desired_temperature
                 ) or (
-                    isinstance(program_now, float)
-                    and self.temperature >= program_now
+                    program_now_is_number and self.temperature >= program_now
                 )
             ):
                 # Catch sleep for at least 180 seconds to prevent quick
