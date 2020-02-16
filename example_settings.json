@@ -1,0 +1,26 @@
+{
+  "mode": {
+    "auto": false,
+    "program": 0,
+    "manual": false,
+    "desired_temp": 20.0
+  },
+  "temperatures": {
+    "room": 20.0
+  },
+  "log": {
+    "loglevel": "info",
+    "global_log_path": "",
+    "session_log_path": "",
+    "last_day_on": "1970-01-01",
+    "time_elapsed": "0:00:00"
+  },
+  "configs": {
+    "UDP_IP": '192.168.0.10',
+    "UDP_port": 9000
+  },
+  "poll_intervals": {
+    "settings": 5,
+    "temperature": 60
+  }
+}
