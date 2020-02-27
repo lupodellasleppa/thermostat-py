@@ -30,7 +30,14 @@ class Poller():
         self.thermometer.settimeout(1)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.temperature = self.settings['temperatures']['room']
+<<<<<<< HEAD
         if self.settings['log']['last_day_on'] != util.get_now()['formatted_date']:
+=======
+        if (
+            self.settings['log']['last_day_on']
+            != util.get_now()['formatted_date']
+        ):
+>>>>>>> master
             self.time_elapsed = 0
             util.write_log(self.settings['log']['global'],
                 {
@@ -82,49 +89,114 @@ class Poller():
         logger.debug('Settings handler in poller: {}'.format(self.settings))
         manual = self.settings['mode']['manual']
         auto = self.settings['mode']['auto']
-        prog_no = self.settings['mode']['program']
+        program_number = self.settings['mode']['program']
+        desired_temperature = self.settings['mode']['desired_temp']
         logger.debug('time to wait: {}'.format(self.time_to_wait))
 
+        # Get room temperature
         self.temperature = self.request_temperatures()
 
-        # Room temperature is lower than desired temperature
-        if self.temperature < self.settings['mode']['desired_temp']:
-            # MANUAL MODE
-            if manual:
-                return self.turn_on()
-            # AUTO MODE
-            elif auto:
-                program = Program(self.settings['mode']['program'])
-                logger.debug(
-                    'Loaded program {}.'.format(program.program_number)
-                )
-                logger.debug(
-                    "It is {} on {}.".format(
-                        current['formatted_time'],
-                        current['weekday'].title()
-                    )
-                )
-                program_now = program.program[current['weekday']][str(
-                    current['hours']
-                )] # Synchronize to current day and hour in program
-                logger.debug('Program is now: {}'.format(program_now))
+        # MANUAL MODE
+        if manual:
+            return self._manual_mode(desired_temperature)
 
-                if program_now: # Day and hour in program are set to True
-                    return self.turn_on()
-                else:
-                    return self.turn_off()
-
-            else: # BOTH MANUAL AND AUTO ARE OFF
-                return self.turn_off()
-
-        else: # Room temperature satisfies desired temperature
-        # Catch sleep for at least 180 seconds to prevent quick
-        # switching on and off of heater
-            logger.info(
-                'Reached desired temperature.'
-                ' Turning off heater and waiting 180 seconds before next poll.'
+        # AUTO MODE
+        elif auto:
+            return self._auto_mode(
+                desired_temperature, program_number, current
             )
-            return self.turn_off(reset=True)
+
+        else: # BOTH MANUAL AND AUTO ARE OFF
+            return self.turn_off()
+
+
+    def _manual_mode(self, desired_temperature):
+        '''
+        Action to take when MANUAL mode is True
+
+        Manual mode prevails over auto mode and so does desired_temperature
+        over what's reported in program.json
+        '''
+
+        # Room temperature is lower than desired temperature
+        if self.temperature < desired_temperature:
+            return self.turn_on()
+        # Room temperature satisfies desired temperature
+        else:
+            return self._turn_off_restart()
+
+
+    def _auto_mode(self, desired_temperature, program_number, current):
+        '''
+        Action to take when AUTO mode is True
+        '''
+
+        # Load program
+        p = self._load_program(program_number, current)
+
+        # Load program setting at current day and time
+        program_now = p.program[current['weekday']][str(current['hours'])]
+        logger.debug('Program is now: {}'.format(program_now))
+
+        # Value in program is bool and set to True
+        if (
+            program_now is True
+            and self.temperature < desired_temperature
+        ):
+            return self.turn_on()
+        # Value in program is float and greater than actual temperature
+        elif (
+            util.is_number(program_now) and self.temperature < program_now
+        ):
+            return self.turn_on()
+        # Room temperature satisfies desired temperature
+        elif (
+            (
+                program_now is True
+                and self.temperature >= desired_temperature
+            ) or (
+                util.is_number(program_now) and self.temperature >= program_now
+            )
+        ):
+            if self.heater_switch.stats:
+                return self._turn_off_restart()
+            else:
+                return self.turn_off()
+        else:
+            return self.turn_off()
+
+
+    def _load_program(self, program_number, current):
+
+        program = Program(program_number)
+
+        logger.debug(
+            'Loaded program {}.'.format(program.program_number)
+        )
+        logger.debug(
+            "It is {} on {}.".format(
+                current['formatted_time'],
+                current['weekday'].title()
+            )
+        )
+
+        return program
+
+
+    def _turn_off_restart(self):
+        '''
+        Catch sleep for at least 180 seconds to prevent quick
+        switching on and off of heater
+        '''
+
+        seconds = 170
+        logger.info(
+            'Reached desired temperature.'
+            ' Turning off heater and waiting'
+            ' {} seconds before next poll.'.format(seconds)
+        )
+
+        return self.turn_off(seconds=seconds, reset=True)
 
     def turn_on(self):
 
@@ -147,7 +219,6 @@ class Poller():
     def turn_off(self, seconds=None, reset=False):
 
         if reset:
-            seconds = 180
             self.loop_count = -1
 
         if seconds is None:
@@ -157,8 +228,11 @@ class Poller():
             # stop it
             logger.debug('Received signal to turn heater OFF.')
             self.heater_switch.off()
+            self.heater_switch.catch_sleep(
+                seconds, self.temperature
+            )
         self.heater_switch.catch_sleep(
-            seconds, self.temperature
+            temperature=self.temperature, seconds=self.time_to_wait
         )
 
         return 0
