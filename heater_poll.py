@@ -134,30 +134,41 @@ class Poller():
         program_now = p.program[current['weekday']][str(current['hours'])]
         logger.debug('Program is now: {}'.format(program_now))
 
-        # Value in program is bool and set to True
+        ### TURN ON CASE
         if (
-            program_now is True
-            and self.temperature < desired_temperature
+            (
+                # Value in program is bool, True, and room temp is
+                # lower than desired temperature
+                program_now is True
+                and self.temperature < desired_temperature
+            ) or (
+                # Value in program is float and greater than room temperature
+                util.is_number(program_now) and self.temperature < program_now
+            )
         ):
-            return self.turn_on()
-        # Value in program is float and greater than actual temperature
-        elif (
-            util.is_number(program_now) and self.temperature < program_now
-        ):
-            return self.turn_on()
-        # Room temperature satisfies desired temperature
+            if not self.heater_switch.stats:
+                return self.turn_on(seconds=60)
+            else:
+                return self.turn_on()
+
+        ### TURN OFF CASE
         elif (
             (
+                # Value in program is bool, True and room temp is
+                # greater than desired temperature
                 program_now is True
                 and self.temperature >= desired_temperature
             ) or (
+                # Value in program is float and lower than room temperature
                 util.is_number(program_now) and self.temperature >= program_now
             )
         ):
             if self.heater_switch.stats:
-                return self._turn_off_restart()
+                return self.turn_off(seconds=170, reset=True)
             else:
                 return self.turn_off()
+
+        ### ANYTHING ELSE GOES TO OFF, JUST IN CASE
         else:
             return self.turn_off()
 
@@ -178,23 +189,17 @@ class Poller():
 
         return program
 
+    def turn_on(self, seconds=None):
 
-    def _turn_off_restart(self):
-        '''
-        Catch sleep for at least 180 seconds to prevent quick
-        switching on and off of heater
-        '''
-
-        seconds = 170
-        logger.info(
-            'Reached desired temperature.'
-            ' Turning off heater and waiting'
-            ' {} seconds before next poll.'.format(seconds)
-        )
-
-        return self.turn_off(seconds=seconds, reset=True)
-
-    def turn_on(self):
+        if seconds is None:
+            seconds = self.time_to_wait
+        # if seconds is not None it's probably because it's the first
+        # turn_on after a turned off period and we want to keep it stable
+        else:
+            logger.info(
+                'Room temperature lower than set desired temperature!'
+                ' Turning ON heater.'
+            )
 
         if not self.heater_switch.stats:
             # Start it
@@ -207,7 +212,7 @@ class Poller():
             self.heater_switch.on()
 
         self.heater_switch.catch_sleep(
-            self.time_to_wait, self.temperature
+            seconds, self.temperature
         )
 
         return time.perf_counter() - self.count_start
@@ -219,16 +224,21 @@ class Poller():
 
         if seconds is None:
             seconds = self.time_to_wait
+        # if seconds is not None it's probably because it's the first
+        # turn_off after a turned on period and we want to keep it stable
+        else:
+            logger.info(
+                'Reached desired temperature.'
+                ' Turning OFF heater and waiting'
+                ' {} seconds before next poll.'.format(seconds)
+            )
 
         if self.heater_switch.stats:
             # stop it
             logger.debug('Received signal to turn heater OFF.')
             self.heater_switch.off()
-            self.heater_switch.catch_sleep(
-                seconds, self.temperature
-            )
         self.heater_switch.catch_sleep(
-            temperature=self.temperature, seconds=self.time_to_wait
+            seconds, self.temperature
         )
 
         return 0
