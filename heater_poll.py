@@ -154,7 +154,10 @@ class Poller():
                 util.is_number(program_now) and self.temperature >= program_now
             )
         ):
-            return self._turn_off_restart()
+            if self.heater_switch.stats:
+                return self._turn_off_restart()
+            else:
+                return self.turn_off()
         else:
             return self.turn_off()
 
@@ -224,10 +227,9 @@ class Poller():
             self.heater_switch.catch_sleep(
                 seconds, self.temperature
             )
-        else:
-            self.heater_switch.catch_sleep(
-                temperature=self.temperature, seconds=self.time_to_wait
-            )
+        self.heater_switch.catch_sleep(
+            temperature=self.temperature, seconds=self.time_to_wait
+        )
 
         return 0
 
