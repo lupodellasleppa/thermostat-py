@@ -30,10 +30,12 @@ class Poller():
         self.thermometer.settimeout(1)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.temperature = self.settings['temperatures']['room']
+
         if (
             self.settings['log']['last_day_on']
             != util.get_now()['formatted_date']
         ):
+
             self.time_elapsed = 0
             util.write_log(self.settings['log']['global'],
                 {
@@ -42,15 +44,21 @@ class Poller():
                 }
             )
             self.time_elapsed = 0
+
         else:
+
             time_elapsed_restore = datetime.datetime.strptime(
-                self.settings['log'].get('time_elapsed', '0:00:00'), '%H:%M:%S'
+                self.settings['log'].get('time_elapsed', '0:00:00'),
+                '%H:%M:%S'
             )
-            self.time_elapsed = round(datetime.timedelta(
-            hours=time_elapsed_restore.hour,
-            minutes=time_elapsed_restore.minute,
-            seconds=time_elapsed_restore.second
-        ).total_seconds())
+
+            self.time_elapsed = round(
+                datetime.timedelta(
+                    hours=time_elapsed_restore.hour,
+                    minutes=time_elapsed_restore.minute,
+                    seconds=time_elapsed_restore.second
+                ).total_seconds()
+            )
 
         self.last_current = None
 
@@ -82,27 +90,43 @@ class Poller():
                 }
             }
         )
+
         logger.debug('Settings handler in poller: {}'.format(self.settings))
+
         manual = self.settings['mode']['manual']
         auto = self.settings['mode']['auto']
         program_number = self.settings['mode']['program']
         desired_temperature = self.settings['mode']['desired_temp']
         logger.debug('time to wait: {}'.format(self.time_to_wait))
 
+        return self._handle_on_and_off(current, **self.settings['mode'])
+
+    def _handle_on_and_off(
+        self,
+        current,
+        manual,
+        auto,
+        program,
+        desired_temp
+    ):
+        '''
+        Handles all there is to turning the heater on or off:
+        modes, programs, temperature.
+        '''
+
         # Get room temperature
         self.temperature = self.request_temperatures()
 
         # MANUAL MODE
         if manual:
-            return self._manual_mode(desired_temperature)
+            return self._manual_mode(desired_temp)
 
         # AUTO MODE
         elif auto:
-            return self._auto_mode(
-                desired_temperature, program_number, current
-            )
+            return self._auto_mode(desired_temp, program, current)
 
-        else: # BOTH MANUAL AND AUTO ARE OFF
+        # BOTH MANUAL AND AUTO ARE OFF
+        else:
             return self.turn_off()
 
 
@@ -111,7 +135,7 @@ class Poller():
         Action to take when MANUAL mode is True
 
         Manual mode prevails over auto mode and so does desired_temperature
-        over what's reported in program.json
+        over possible numbers in program.json
         '''
 
         # Room temperature is lower than desired temperature
@@ -119,7 +143,7 @@ class Poller():
             return self.turn_on()
         # Room temperature satisfies desired temperature
         else:
-            return self._turn_off_restart()
+            return self.turn_off()
 
 
     def _auto_mode(self, desired_temperature, program_number, current):
@@ -135,38 +159,22 @@ class Poller():
         logger.debug('Program is now: {}'.format(program_now))
 
         ### TURN ON CASE
-        if (
-            (
-                # Value in program is bool, True, and room temp is
-                # lower than desired temperature
-                program_now is True
-                and self.temperature < desired_temperature
-            ) or (
-                # Value in program is float and greater than room temperature
-                util.is_number(program_now) and self.temperature < program_now
-            )
+        if (# Value in program is bool, True, and room temp is
+            # lower than desired temperature
+            (program_now is True and self.temperature < desired_temperature)
+            or
+            (util.is_number(program_now) and self.temperature < program_now)
         ):
-            if not self.heater_switch.stats:
-                return self.turn_on(seconds=60)
-            else:
-                return self.turn_on()
+            return self.turn_on()
 
         ### TURN OFF CASE
-        elif (
-            (
-                # Value in program is bool, True and room temp is
-                # greater than desired temperature
-                program_now is True
-                and self.temperature >= desired_temperature
-            ) or (
-                # Value in program is float and lower than room temperature
-                util.is_number(program_now) and self.temperature >= program_now
-            )
+        elif (# Value in program is bool, True and room temp is
+            # greater than desired temperature
+            (program_now is True and self.temperature >= desired_temperature)
+            or
+            (util.is_number(program_now) and self.temperature >= program_now)
         ):
-            if self.heater_switch.stats:
-                return self.turn_off(seconds=170, reset=True)
-            else:
-                return self.turn_off()
+            return self.turn_off()
 
         ### ANYTHING ELSE GOES TO OFF, JUST IN CASE
         else:
@@ -191,18 +199,15 @@ class Poller():
 
     def turn_on(self, seconds=None):
 
-        if seconds is None:
-            seconds = self.time_to_wait
-        # if seconds is not None it's probably because it's the first
-        # turn_on after a turned off period and we want to keep it stable
-        else:
+        seconds = self.time_to_wait
+
+        if not self.heater_switch.stats:
+            # Start it
+            seconds = 60
             logger.info(
                 'Room temperature lower than set desired temperature!'
                 ' Turning ON heater.'
             )
-
-        if not self.heater_switch.stats:
-            # Start it
             logger.debug(
                 'Heater switch stats: {}'.format(
                     self.heater_switch.stats
@@ -222,19 +227,17 @@ class Poller():
         if reset:
             self.loop_count = -1
 
-        if seconds is None:
-            seconds = self.time_to_wait
-        # if seconds is not None it's probably because it's the first
-        # turn_off after a turned on period and we want to keep it stable
-        else:
-            logger.info(
-                'Reached desired temperature.'
-                ' Turning OFF heater and waiting'
-                ' {} seconds before next poll.'.format(seconds)
-            )
+        seconds = self.time_to_wait
+
 
         if self.heater_switch.stats:
             # stop it
+            seconds = 170
+            logger.info(
+            'Reached desired temperature.'
+            ' Turning OFF heater and waiting'
+            ' {} seconds before next poll.'.format(seconds)
+            )
             logger.debug('Received signal to turn heater OFF.')
             self.heater_switch.off()
         self.heater_switch.catch_sleep(
@@ -252,10 +255,10 @@ class Poller():
           "celsius": float
         }
 
-        If request goes into timeout request is skipped.
-        If skips first request so self.temperature is None, repeats the request.
+        If request goes into timeout: request is skipped,
+        self.temperature is set to None, request is repeated on next loop.
         If request is succesful and new temperature is different than what's
-        reported in settings.json file, update the file.
+        reported in settings.json file: update the file and self.temperature.
         '''
 
         logger.info(
@@ -267,6 +270,7 @@ class Poller():
         )
 
         if not self.loop_count or not self.loop_count % self.thermometer_poll:
+
             self.thermometer.sendto(b'temps_req', (self.UDP_IP, self.UDP_port))
 
             try:
@@ -281,6 +285,7 @@ class Poller():
                 self.loop_count = -1
 
             if self.temperature != self.settings['temperatures']['room']:
+
                 self.settings = settings_handler.handler(
                     settings_path=self.settings_path,
                     settings_changes={
@@ -289,6 +294,7 @@ class Poller():
                         }
                     }
                 )
+
         logger.debug(
             'Temperature from thermometer is: {}° celsius.'.format(
                 self.temperature
