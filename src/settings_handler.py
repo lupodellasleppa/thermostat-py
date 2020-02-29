@@ -7,22 +7,29 @@ import os
 
 import util
 
+cwd_parent_directory = os.path.split(os.getcwd())[0]
+
 example_settings = {
   "mode": {
     "auto": False,
     "program": 0,
     "manual": False,
-    "desired_temp": 21.5
+    "desired_temp": 19.5
   },
   "temperatures": {
-    "room": 16.0
+    "room": 20.0
   },
   "log": {
     "loglevel": "INFO",
-    "global": os.path.join(os.getcwd(), 'log.json'),
     "session": "",
     "last_day_on": "1970-01-01",
-    "time_elapsed": "0:00:00"
+    "time_elapsed": "0:00:00",
+  },
+  "paths": {
+    "daily_log": os.path.join(cwd_parent_directory, "logs/log.json"),
+    "relay_stat": os.path.join(cwd_parent_directory, "settings/stats.json"),
+    "program": os.path.join(cwd_parent_directory, "programs/program.json"),
+    "examples": os.path.join(cwd_parent_directory, "examples")
   },
   "configs": {
     "UDP_IP": "127.0.0.1",
@@ -31,10 +38,15 @@ example_settings = {
   "poll_intervals": {
     "settings": 1,
     "temperature": 5
+  },
+  "relay": {
+    "channel": 36,
+    "direction": 0,
+    "initial": 1
   }
 }
 
-logger_name = 'thermostat'
+logger_name = 'thermostat.settings'
 logger = logging.getLogger(logger_name)
 
 
@@ -179,6 +191,9 @@ def load_settings(settings_path):
 
     if not os.path.isfile(settings_path) or not os.stat(settings_path).st_size:
         logger.info('{} not found, creating.'.format(settings_path))
+        settings_parent = os.path.split(settings_path)[0]
+        if not os.path.isdir(settings_parent):
+            os.mkdir(settings_parent)
         with open(settings_path, 'w') as f:
             json.dump(example_settings, f, indent=2)
         logger.debug('Created new settings.json file from example.')

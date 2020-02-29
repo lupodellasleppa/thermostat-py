@@ -6,7 +6,7 @@ User=pi
 Type=idle
 Restart=on-failure
 RestartSec=5
-ExecStart=/usr/bin/python3 /home/pi/raspb-scripts/heater_poll.py /home/pi/raspb-scripts/settings.json
+ExecStart=/usr/bin/python3 /home/pi/thermostat_py/src/poll.py /home/pi/thermostat_py/settings/settings.json
 ExecStopPost=/bin/sleep 1
 
 [Install]

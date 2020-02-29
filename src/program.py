@@ -9,13 +9,11 @@ import util
 
 class Program(object):
 
-    def __init__(self, program_number):
+    def __init__(self, program_number, program_path, examples_path):
 
-        repo_path = '/home/pi/raspb-scripts'
-
-        self.program_path = os.path.join(repo_path, 'program.json')
+        self.program_path = program_path
         self.program_example_path = os.path.join(
-            repo_path, 'example_program.json'
+            os.path.split(program_path)[0], 'example_program.json'
         )
 
         if not os.path.isfile(self.program_path):
