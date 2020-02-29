@@ -9,20 +9,21 @@ import signal
 import time
 
 
-logger_name = 'thermostat'
+logger_name = 'thermostat.relay'
 logger = logging.getLogger(logger_name)
 
 
 class Relay(object):
 
-    def __init__(self, relay):
+    def __init__(self, relay, path):
         '''
         Takes a dictionary containing what GPIO.setup needs:
-        channel, direction {0,1}, initial {0,1}.
+        channel, direction {0,1}, initial {0,1},
+        and a path where to store the state of the relay
         '''
 
-        self.pin = relay['channel']
-        self.stats_path = '/home/pi/raspb-scripts/stats.json'
+        self.pin = str(relay['channel'])
+        self.stats_path = path
 
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(**relay)

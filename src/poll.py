@@ -7,7 +7,7 @@ import logging
 import socket
 import time
 
-from heater_program import Program
+from program import Program
 from relay import Relay
 import settings_handler
 import util
@@ -20,6 +20,12 @@ class Poller():
         self.settings_path = settings_path
         # load settings
         self.settings = settings_handler.load_settings(settings_path)
+        # arrange paths
+        self.program_path = self.settings['paths']['program']
+        self.examples_path = self.settings['paths']['examples']
+        self.relay_stats_path = self.settings['paths']['relay_stat']
+        self.daily_log_path = self.settings['paths']['daily_log']
+        # get intervals
         self.thermometer_poll = self.settings['poll_intervals']['temperature']
         self.time_to_wait = self.settings['poll_intervals']['settings']
         # parameters for UDP communication with thermometer
@@ -29,12 +35,13 @@ class Poller():
         self.thermometer.settimeout(1)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.temperature = self.settings['temperatures']['room']
+        # handle day change
         if (
             self.settings['log']['last_day_on']
             != util.get_now()['formatted_date']
         ):
             self.time_elapsed = 0
-            util.write_log(self.settings['log']['global'],
+            util.write_log(self.daily_log_path,
                 {
                     'date': self.settings['log']['last_day_on'],
                     'time_elapsed': util.format_seconds(self.time_elapsed)
@@ -51,8 +58,10 @@ class Poller():
             seconds=time_elapsed_restore.second
         ).total_seconds())
 
+        self.program_number = self.settings['mode']['program']
+
         relay_settings = self.settings['relay']
-        self.heater_switch = Relay(relay_settings)
+        self.heater_switch = Relay(relay_settings, self.relay_stats_path)
 
         self.last_current = None
 
@@ -87,7 +96,6 @@ class Poller():
         logger.debug('Settings handler in poller: {}'.format(self.settings))
         manual = self.settings['mode']['manual']
         auto = self.settings['mode']['auto']
-        program_number = self.settings['mode']['program']
         desired_temperature = self.settings['mode']['desired_temp']
         logger.debug('time to wait: {}'.format(self.time_to_wait))
 
@@ -306,7 +314,7 @@ def main(settings_path):
             heater_poll.last_current['day'] != current['day']
         ):
             logger.info('Entered another day in history.')
-            util.write_log(heater_poll.settings['log']['global'],
+            util.write_log(heater_poll.daily_log_path,
                 {
                     'date': heater_poll.last_current['formatted_date'],
                     'time_elapsed': util.format_seconds(
@@ -328,7 +336,7 @@ if __name__ == '__main__':
     parser.add_argument('settings_path')
     args = parser.parse_args()
 
-    logger_name = 'thermostat'
+    logger_name = 'thermostat.poller'
     logging.basicConfig(
         format='{levelname:<8} {asctime} - {message}',
         style='{'
