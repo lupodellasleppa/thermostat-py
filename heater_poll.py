@@ -270,7 +270,7 @@ class Poller():
         reported in settings.json file: update the file and self.temperature.
         '''
 
-        logger.info(
+        logger.debug(
             'Loop count: {}; thermometer poll: {}; read: {}.'.format(
                 self.loop_count,
                 self.thermometer_poll,
