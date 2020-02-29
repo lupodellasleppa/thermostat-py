@@ -18,7 +18,6 @@ class Poller():
     def __init__(self, settings_path):
 
         self.settings_path = settings_path
-        self.heater_switch = Relay('36')
         # load settings
         self.settings = settings_handler.load_settings(settings_path)
         self.thermometer_poll = self.settings['poll_intervals']['temperature']
@@ -30,14 +29,10 @@ class Poller():
         self.thermometer.settimeout(1)
         self.thermometer.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.temperature = self.settings['temperatures']['room']
-<<<<<<< HEAD
-        if self.settings['log']['last_day_on'] != util.get_now()['formatted_date']:
-=======
         if (
             self.settings['log']['last_day_on']
             != util.get_now()['formatted_date']
         ):
->>>>>>> master
             self.time_elapsed = 0
             util.write_log(self.settings['log']['global'],
                 {
@@ -55,6 +50,9 @@ class Poller():
             minutes=time_elapsed_restore.minute,
             seconds=time_elapsed_restore.second
         ).total_seconds())
+
+        relay_settings = self.settings['relay']
+        self.heater_switch = Relay(relay_settings)
 
         self.last_current = None
 

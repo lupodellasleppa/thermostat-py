@@ -12,47 +12,27 @@ import time
 logger_name = 'thermostat'
 logger = logging.getLogger(logger_name)
 
-relay_pins = [
-    {
-        'channel': 36,
-        'direction': GPIO.OUT,
-        'initial': GPIO.HIGH
-    }
-]
-
 
 class Relay(object):
 
-    def __init__(self, pin):
+    def __init__(self, relay):
         '''
-        Only pin is a necessary argument.
-
-        pin is looked up as relay_pins['channel'], whereas relay_pins
-        is a mapping with all other additional information
-        [
-          {
-            'channel': pin,
-            'direction': GPIO.<IN|OUT>,
-            'initial': GPIO.<LOW|HIGH>
-          }
-        ]
+        Takes a dictionary containing what GPIO.setup needs:
+        channel, direction {0,1}, initial {0,1}.
         '''
 
-        self.pin = pin
+        self.pin = relay['channel']
         self.stats_path = '/home/pi/raspb-scripts/stats.json'
 
         GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(**relay)
 
+        # read initial stats from file if any
         if os.path.isfile(self.stats_path):
             self.stats = self.read_stats()[self.pin]
+        # otherwise init them to False
         else:
             self.stats = self.write_stats({self.pin: False})
-
-        for relay in relay_pins:
-
-            if relay['channel'] == int(self.pin):
-                GPIO.setup(**relay)
-
 
     def on(self):
 
