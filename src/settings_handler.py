@@ -191,6 +191,9 @@ def load_settings(settings_path):
 
     if not os.path.isfile(settings_path) or not os.stat(settings_path).st_size:
         logger.info('{} not found, creating.'.format(settings_path))
+        settings_parent = os.path.split(settings_path)[0]
+        if not os.path.isdir(settings_parent):
+            os.mkdir(settings_parent)
         with open(settings_path, 'w') as f:
             json.dump(example_settings, f, indent=2)
         logger.debug('Created new settings.json file from example.')
