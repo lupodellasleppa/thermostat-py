@@ -197,13 +197,18 @@ class Poller():
 
         return program
 
-    def turn_on(self, seconds=None):
+    def turn_on(self):
 
         seconds = self.time_to_wait
 
+        # only when heater was off at previous loop
         if not self.heater_switch.stats:
-            # Start it
+            # set seconds to 60 so it doesn't immediately turn back off
+            # when temperatures are fluctuating
             seconds = 60
+            # reset loop_count so it will read temperatures
+            # right away on next loop
+            self.loop_count = -1
             logger.info(
                 'Room temperature lower than set desired temperature!'
                 ' Turning ON heater.'
@@ -214,6 +219,7 @@ class Poller():
                 )
             )
             logger.debug('Received signal to turn heater ON.')
+            # start it
             self.heater_switch.on()
 
         self.heater_switch.catch_sleep(
@@ -222,24 +228,27 @@ class Poller():
 
         return time.perf_counter() - self.count_start
 
-    def turn_off(self, seconds=None, reset=False):
-
-        if reset:
-            self.loop_count = -1
+    def turn_off(self):
 
         seconds = self.time_to_wait
 
-
+        # only when heater was on at previous loop
         if self.heater_switch.stats:
-            # stop it
+            # set seconds to 170 so it doesn't immediately turn back on
+            # when temperatures are fluctuating
             seconds = 170
+            # reset loop_count so it will read temperatures
+            # right away on next loop
+            self.loop_count = -1
             logger.info(
             'Reached desired temperature.'
             ' Turning OFF heater and waiting'
             ' {} seconds before next poll.'.format(seconds)
             )
             logger.debug('Received signal to turn heater OFF.')
+            # stop it
             self.heater_switch.off()
+
         self.heater_switch.catch_sleep(
             seconds, self.temperature
         )
