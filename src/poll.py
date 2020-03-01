@@ -4,6 +4,7 @@ import argparse
 import datetime
 import json
 import logging
+import logging.handlers
 import socket
 import time
 
@@ -132,7 +133,7 @@ class Poller():
 
         # AUTO MODE
         elif auto:
-            return self._auto_mode(desired_temperature, current)
+            return self._auto_mode(desired_temp, current)
 
         # BOTH MANUAL AND AUTO ARE OFF
         else:
@@ -377,5 +378,20 @@ if __name__ == '__main__':
             )['log']['loglevel']
         )
     )
+
+    # Rotating log file handler, rotates at midnight
+    file_handler = logging.handlers.TimedRotatingFileHandler(
+        filename='/home/pi/thermostat_py/logs/global.log',
+        when='midnight',
+        backupCount=5
+    )
+    file_handler.setLevel(logging.INFO)
+    log_format = logging.Formatter(
+        fmt='{levelname:<8} {asctime} - {message}',
+        style='{'
+    )
+    file_handler.setFormatter(log_format)
+    # add the handler to the logger
+    logger.addHandler(file_handler)
 
     main(args.settings_path)
