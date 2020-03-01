@@ -7,7 +7,9 @@ import os
 
 import util
 
-cwd_parent_directory = os.path.split(os.getcwd())[0]
+
+file_abspath = os.path.abspath(__file__)
+parent_directory = os.path.split(os.path.split(file_abspath)[0])[0]
 
 example_settings = {
   "mode": {
@@ -26,10 +28,10 @@ example_settings = {
     "time_elapsed": "0:00:00",
   },
   "paths": {
-    "daily_log": os.path.join(cwd_parent_directory, "logs/log.json"),
-    "relay_stat": os.path.join(cwd_parent_directory, "settings/stats.json"),
-    "program": os.path.join(cwd_parent_directory, "programs/program.json"),
-    "examples": os.path.join(cwd_parent_directory, "examples")
+    "daily_log": os.path.join(parent_directory, "logs/log.json"),
+    "relay_stat": os.path.join(parent_directory, "settings/stats.json"),
+    "program": os.path.join(parent_directory, "programs/program.json"),
+    "examples": os.path.join(parent_directory, "examples")
   },
   "configs": {
     "UDP_IP": "127.0.0.1",
@@ -148,7 +150,7 @@ def main(time_elapsed=None):
 
     args = create_parser()
 
-    settings_path = 'settings.json'
+    settings_path = os.path.join(parent_directory, 'settings/settings.json')
     settings_file = load_settings(settings_path)
     # define all fields that can be changed using this module
     settings_changes = {
