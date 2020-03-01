@@ -132,7 +132,7 @@ class Poller():
 
         # AUTO MODE
         elif auto:
-            return self._auto_mode(desired_temp, program, current)
+            return self._auto_mode(desired_temperature, current)
 
         # BOTH MANUAL AND AUTO ARE OFF
         else:
@@ -155,13 +155,13 @@ class Poller():
             return self.turn_off()
 
 
-    def _auto_mode(self, desired_temperature, program_number, current):
+    def _auto_mode(self, desired_temperature, current):
         '''
         Action to take when AUTO mode is True
         '''
 
         # Load program
-        p = self._load_program(program_number, current)
+        p = self._load_program(current)
 
         # Load program setting at current day and time
         program_now = p.program[current['weekday']][str(current['hours'])]
@@ -190,9 +190,13 @@ class Poller():
             return self.turn_off()
 
 
-    def _load_program(self, program_number, current):
+    def _load_program(self, current):
 
-        program = Program(program_number)
+        program = Program(
+            program_number=self.program_number,
+            program_path=self.program_path,
+            examples_path=self.examples_path
+        )
 
         logger.debug(
             'Loaded program {}.'.format(program.program_number)
@@ -360,7 +364,7 @@ if __name__ == '__main__':
     parser.add_argument('settings_path')
     args = parser.parse_args()
 
-    logger_name = 'thermostat.poller'
+    logger_name = 'thermostat'
     logging.basicConfig(
         format='{levelname:<8} {asctime} - {message}',
         style='{'
