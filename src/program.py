@@ -30,10 +30,6 @@ class Program(object):
 
         program = self.read_program()
         try:
-            program_number = int(program_number)
-        except ValueError:
-            raise ValueError("Value for 'program_number' must be a number")
-        try:
             return program[str(program_number)]
         except ValueError as e:
             raise e
