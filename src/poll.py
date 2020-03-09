@@ -132,7 +132,7 @@ class Poller():
 
         # AUTO MODE
         elif auto:
-            return self._auto_mode(desired_temperature, current)
+            return self._auto_mode(desired_temp, current)
 
         # BOTH MANUAL AND AUTO ARE OFF
         else:
