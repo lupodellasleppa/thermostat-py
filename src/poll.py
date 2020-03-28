@@ -23,7 +23,6 @@ class Poller():
         # arrange paths
         self.program_path = self.settings['paths']['program']
         self.examples_path = self.settings['paths']['examples']
-        self.relay_stats_path = self.settings['paths']['relay_stat']
         self.daily_log_path = self.settings['paths']['daily_log']
         # get intervals
         self.thermometer_poll = self.settings['poll_intervals']['temperature']
@@ -68,7 +67,7 @@ class Poller():
         self.program_number = self.settings['mode']['program']
 
         relay_settings = self.settings['relay']
-        self.heater_switch = Relay(relay_settings, self.relay_stats_path)
+        self.heater_switch = Relay(relay_settings, self.settings_path)
 
         self.last_current = None
 

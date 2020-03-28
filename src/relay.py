@@ -28,7 +28,10 @@ class Relay(object):
 
         self.pin = str(relay['channel'])
         self.settings_path = settings_path
-        self.stats = relay.pop('state')
+        if 'state' in relay.keys():
+            self.stats = relay.pop('state')
+        else:
+            self.stats = False
 
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(**relay)
@@ -91,7 +94,7 @@ class Relay(object):
 
     def read_stats(self):
 
-        settings = settings_handler.load_settings(settings_path)
+        settings = settings_handler.load_settings(self.settings_path)
         stats = settings['relay']['state']
 
         return stats
@@ -111,11 +114,11 @@ class Relay(object):
             }
         )
 
-        return self.read_stats()
+        return settings
 
     def update_stats(self, new_stats):
 
-        self.stats = new_stats[self.pin]
+        self.stats = new_stats
 
     def catch_sleep(self, seconds, temperature):
         '''
