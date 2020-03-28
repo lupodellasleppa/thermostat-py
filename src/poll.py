@@ -364,6 +364,9 @@ if __name__ == '__main__':
     parser.add_argument('settings_path')
     args = parser.parse_args()
 
+    settings = settings_handler.load_settings(args.settings_path)
+    paths = settings['paths']
+
     logger_name = 'thermostat'
     logging.basicConfig(
         format='{levelname:<8} {asctime} - {message}',
@@ -380,7 +383,7 @@ if __name__ == '__main__':
 
     # Rotating log file handler, rotates at midnight
     file_handler = logging.handlers.TimedRotatingFileHandler(
-        filename='/home/pi/thermostat_py/logs/global.log',
+        filename=paths['global'],
         when='midnight',
         backupCount=5
     )
