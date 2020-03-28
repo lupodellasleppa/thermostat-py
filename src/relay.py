@@ -8,6 +8,8 @@ import RPi.GPIO as GPIO
 import signal
 import time
 
+import settings_handler
+
 
 logger_name = 'thermostat.relay'
 logger = logging.getLogger(logger_name)
@@ -15,37 +17,30 @@ logger = logging.getLogger(logger_name)
 
 class Relay(object):
 
-    def __init__(self, relay, path):
+    def __init__(self, relay, settings_path):
         '''
-        Takes a dictionary containing what GPIO.setup needs:
-        channel, direction {0,1}, initial {0,1},
-        and a path where to store the state of the relay
+        Takes a dictionary containing what GPIO.setup needs as first argument
+        plus path to thermostat settings to write relay state at each operation
+
+        relay dict:
+        channel, direction {0,1}, initial {0,1}
         '''
 
         self.pin = str(relay['channel'])
-        self.stats_path = path
+        self.settings_path = settings_path
+        self.stats = relay.pop('state')
 
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(**relay)
 
-        # read initial stats from file if any
-        if os.path.isfile(self.stats_path):
-            self.stats = self.read_stats()[self.pin]
-        # otherwise init them to False
-        else:
-            self.stats = self.write_stats({self.pin: False})
-
     def on(self):
 
-        stats = self.read_stats()
-        if not stats[self.pin]:
+        if not self.stats:
             GPIO.output(int(self.pin), GPIO.LOW)
 
-            stats[self.pin] = True
+            wrote_stats = self.write_stats(True)
 
-            wrote_stats = self.write_stats(stats)
-
-            if wrote_stats == stats:
+            if wrote_stats == True:
                 logger.info(f'Turned ON channel {self.pin}.')
             else:
                 logger.warning('Fault while writing stats.')
@@ -64,14 +59,12 @@ class Relay(object):
 
     def off(self):
 
-        stats = self.read_stats()
-        if stats[self.pin]:
+        if self.stats:
             GPIO.output(int(self.pin), GPIO.HIGH)
 
-            stats[self.pin] = False
-            wrote_stats = self.write_stats(stats)
+            wrote_stats = self.write_stats(False)
 
-            if wrote_stats == stats:
+            if wrote_stats == False:
                 logger.info(f'Turned OFF channel {self.pin}.')
             else:
                 logger.warning('Fault while writing stats.')
@@ -86,11 +79,9 @@ class Relay(object):
 
         GPIO.cleanup(int(self.pin))
 
-        stats = self.read_stats()
-        stats[self.pin] = False
-        wrote_stats = self.write_stats(stats)
+        wrote_stats = self.write_stats(False)
 
-        if wrote_stats == stats:
+        if wrote_stats == False:
             logger.info(f'Cleaned up channel {self.pin}.')
             self.update_stats(wrote_stats)
 
@@ -100,8 +91,8 @@ class Relay(object):
 
     def read_stats(self):
 
-        with open(self.stats_path) as f:
-            stats = json.load(f)
+        settings = settings_handler.load_settings(settings_path)
+        stats = settings['relay']['state']
 
         return stats
 
@@ -111,9 +102,14 @@ class Relay(object):
         Writes new stats to file then reads the file again and returns it.
         '''
 
-        with open(self.stats_path, 'w') as f:
-            n = f.write(json.dumps(new_stats))
-            logger.debug(f'Wrote {n} characters into stats.json file')
+        settings = settings_handler.handler(
+            settings_path=self.settings_path,
+            settings_changes={
+                'relay': {
+                    'state': new_stats
+                }
+            }
+        )
 
         return self.read_stats()
 
