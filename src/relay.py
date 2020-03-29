@@ -59,6 +59,7 @@ class Relay(object):
             self.catch_sleep(1)
             self.on()
 
+        return self.stats
 
     def off(self):
 
@@ -77,6 +78,7 @@ class Relay(object):
         else:
             logger.info(f'Channel {self.pin} was already OFF.')
 
+        return self.stats
 
     def clean(self):
 
@@ -91,6 +93,7 @@ class Relay(object):
         else:
             logger.warning('Fault while writing stats.')
 
+        return self.stats
 
     def read_stats(self):
 
@@ -98,7 +101,6 @@ class Relay(object):
         stats = settings['relay']['state']
 
         return stats
-
 
     def write_stats(self, new_stats):
         '''

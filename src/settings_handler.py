@@ -14,7 +14,7 @@ parent_directory = os.path.split(os.path.split(file_abspath)[0])[0]
 example_settings = {
   "mode": {
     "auto": False,
-    "program": 0,
+    "program": "0",
     "manual": False,
     "desired_temp": 19.5
   },
@@ -28,6 +28,7 @@ example_settings = {
     "time_elapsed": "0:00:00",
   },
   "paths": {
+    "global": os.path.join(parent_directory, "logs/global.json"),
     "daily_log": os.path.join(parent_directory, "logs/log.json"),
     "relay_stat": os.path.join(parent_directory, "settings/stats.json"),
     "program": os.path.join(parent_directory, "programs/program.json"),
@@ -37,14 +38,16 @@ example_settings = {
     "UDP_IP": "127.0.0.1",
     "UDP_port": 2222
   },
-  "poll_intervals": {
+  "intervals": {
     "settings": 1,
-    "temperature": 5
+    "temperature": 0.5,
+    "stop_time": 170
   },
   "relay": {
     "channel": 36,
     "direction": 0,
-    "initial": 1
+    "initial": 1,
+    "state": False
   }
 }
 
@@ -82,7 +85,6 @@ def create_parser():
     parser.add_argument(
         '-p', '--program',
         help='Insert the program number you wish to load.',
-        type=int
     )
 
     parser.add_argument(
@@ -109,16 +111,6 @@ def create_parser():
                 )
         else:
             pass
-
-    def int_to_string(arg):
-
-        if arg is not None:
-            if isinstance(arg, int):
-                return str(arg)
-            else:
-                raise parser.error(
-                    'Please enter an integer.'
-                )
 
     args.manual = string_to_bool(args.manual)
     args.auto = string_to_bool(args.auto)
@@ -151,7 +143,8 @@ def main(time_elapsed=None):
     args = create_parser()
 
     settings_path = os.path.join(parent_directory, 'settings/settings.json')
-    settings_file = load_settings(settings_path)
+    settings_handler = SettingsHandler(settings_path)
+    settings_file = settings_handler.load_settings()
     # define all fields that can be changed using this module
     settings_changes = {
         'mode': {
@@ -180,79 +173,87 @@ def main(time_elapsed=None):
         }
     }
 
-    return handler(
-        settings_path=settings_path,
+    return settings_handler.handler(
         settings_changes=settings_changes
     )
 
 
-def load_settings(settings_path):
-    '''
-    Return setting in 'setting.json' file in a python dictionary.
-    '''
+class SettingsHandler():
 
-    if not os.path.isfile(settings_path) or not os.stat(settings_path).st_size:
-        logger.info('{} not found, creating.'.format(settings_path))
-        settings_parent = os.path.split(settings_path)[0]
-        if not os.path.isdir(settings_parent):
-            os.mkdir(settings_parent)
-        with open(settings_path, 'w') as f:
-            json.dump(example_settings, f, indent=2)
-        logger.debug('Created new settings.json file from example.')
+    def __init__(self, settings_path):
+        self.settings_path = settings_path
 
-    with open(settings_path) as f:
-        settings_file = json.load(f)
+    def load_settings(self, ):
+        '''
+        Return setting in 'setting.json' file in a python dictionary.
+        '''
 
-    return settings_file
+        if (
+            not os.path.isfile(self.settings_path) or
+            not os.stat(self.settings_path).st_size
+        ):
+            logger.info('{} not found, creating.'.format(self.settings_path))
+            settings_parent = os.path.split(self.settings_path)[0]
+            if not os.path.isdir(settings_parent):
+                os.mkdir(settings_parent)
+            with open(self.settings_path, 'w') as f:
+                json.dump(example_settings, f, indent=2)
+            logger.debug('Created new settings.json file from example.')
 
+        with open(self.settings_path) as f:
+            settings_file = json.load(f)
 
-def update_settings(settings_changes, settings_file, settings_path):
-    '''
-    Write settings_changes to 'setting.json' file.
-    Returns contents of the file in a python dictionary.
-    '''
-
-    if settings_changes != settings_file:
-        settings_changes = json.dumps(settings_changes, indent=2)
-        logger.debug('\n' + settings_changes)
-        logger.debug('Settings changed!')
-        with open(settings_path, 'w') as f:
-            f.write(settings_changes)
-            f.write('\n')
-    else:
-        logger.debug('Settings not changed.')
-
-    return load_settings(settings_path)
+        return settings_file
 
 
-def handler(settings_path, settings_changes={}):
-    '''
-    Sends updates to update_settings function.
-    Returns contents of 'settings.json' after updates in a python dictionary.
-    '''
+    def update_settings(self, settings_changes, settings_file):
+        '''
+        Write settings_changes to 'setting.json' file, only
+        if there are differences.
+        Returns contents of the file in a python dictionary.
+        '''
 
-    settings_file = load_settings(settings_path)
+        if settings_changes != settings_file:
+            with open(self.settings_path, 'w') as f:
+                json.dump(settings_changes, f, indent=2)
+                f.write('\n')
+            logger.debug('Settings changed!')
+        else:
+            logger.debug('Settings not changed.')
 
-    logger.debug('Settings file read: {}'.format(settings_file))
-    logger.debug('Settings before update: {}'.format(settings_changes))
+        return self.load_settings()
 
-    # nested dict update of settings_changes
-    settings_changes = {
-        k:( # take outer from settings_file if not in settings_changes
-            {kk:v for kk, v in settings_file[k].items()}
-            if k not in settings_changes
-            else { # if exists in both go deeper
-                kk:( # if key not in settings_changes take v from settings_file
-                    v if kk not in settings_changes[k]
-                    else settings_changes[k][kk] # from settings_changes else
-                ) for kk, v in settings_file[k].items()
-            }
-        ) for k in settings_file
-    }
 
-    logger.debug('Settings after update: {}'.format(settings_changes))
+    def handler(self, settings_changes={}):
+        '''
+        Sends updates to update_settings function.
+        Returns contents of 'settings.json' after updates
+        in a python dictionary.
+        '''
 
-    return update_settings(settings_changes, settings_file, settings_path)
+        settings_file = self.load_settings()
+
+        logger.debug('Settings file read: {}'.format(settings_file))
+        logger.debug('Settings before update: {}'.format(settings_changes))
+
+        # nested dict update of settings_changes
+        settings_changes = {
+            k:( # take outer from settings_file if not in settings_changes
+                {kk:v for kk, v in settings_file[k].items()}
+                if k not in settings_changes
+                else { # if exists in both go deeper
+                    kk:( # if kk not in settings_changes, v from settings_file
+                        v if kk not in settings_changes[k]
+                        # else from settings_changes
+                        else settings_changes[k][kk]
+                    ) for kk, v in settings_file[k].items()
+                }
+            ) for k in settings_file
+        }
+
+        logger.debug('Settings after update: {}'.format(settings_changes))
+
+        return self.update_settings(settings_changes, settings_file)
 
 
 if __name__ == '__main__':

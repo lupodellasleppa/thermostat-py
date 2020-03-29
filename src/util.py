@@ -56,6 +56,7 @@ def get_now():
     current_date = str(current_time.date())
 
     return {
+        'datetime': current_time,
         'day': current_day,
         'weekday': current_weekday,
         'hours': current_hour,
