@@ -114,7 +114,7 @@ class Relay(object):
             }
         )
 
-        return settings
+        return settings['relay']['state']
 
     def update_stats(self, new_stats):
 
