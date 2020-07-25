@@ -7,7 +7,6 @@ from exceptions import ThermometerTimeout
 from thermometer import ThermometerLocal
 
 async def main():
-
     thermometer = ThermometerLocal('192.168.1.112', 4210, 0.5)
     temperature = None
     print('Doing stuff...')
@@ -19,11 +18,17 @@ async def main():
         except ThermometerTimeout:
             pass
         retries += 1
-
+        print(retries)
     return temperature, retries
 
 if __name__ == '__main__':
-    start = time.monotonic()
-    print(asyncio.run(main()))
-    end = time.monotonic()
-    print('Elapsed time: {}'.format(end - start))
+    g_start = time.monotonic()
+    p_start = time.perf_counter()
+    for i in range(3):
+        start = time.monotonic()
+        print(asyncio.run(main()))
+        end = time.monotonic()
+        print('Elapsed time: {}'.format(end - start))
+        time.sleep(1)
+    print("monotonic: {}".format(time.monotonic() - g_start))
+    print("perf_counter: {}".format(time.perf_counter() - p_start))

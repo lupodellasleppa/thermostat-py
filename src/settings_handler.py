@@ -11,7 +11,7 @@ import util
 file_abspath = os.path.abspath(__file__)
 parent_directory = os.path.split(os.path.split(file_abspath)[0])[0]
 
-example_settings = {
+default_settings = {
   "mode": {
     "auto": False,
     "program": "0",
@@ -19,7 +19,7 @@ example_settings = {
     "desired_temp": 19.5
   },
   "temperatures": {
-    "room": 20.0
+    "room": None
   },
   "log": {
     "loglevel": "INFO",
@@ -59,66 +59,42 @@ def create_parser():
     '''
     Defines script's arguments.
     '''
-
     parser = argparse.ArgumentParser(
         description=(
             'Edits the settings.json file ruling the heater behavior.'
         )
     )
-
     parser.add_argument(
         '-a', '--auto',
         help='Set auto to ON. Turns ON heater according to program.'
     )
-
     parser.add_argument(
         '-l', '--loglevel',
         help='Defines the log level for logger in scripts.',
         type=str
     )
-
     parser.add_argument(
         '-m', '--manual',
         help='Set manual to ON. Turns ON heater.'
     )
-
     parser.add_argument(
         '-p', '--program',
         help='Insert the program number you wish to load.',
     )
-
     parser.add_argument(
         '-t', '--temperature',
         help='Insert the desired temperature when in manual mode.',
         type=float
     )
-
     args = parser.parse_args()
     logger.debug(
         f'manual: {args.manual}; auto: {args.auto}; program: {args.program};'
     )
-
-    def string_to_bool(arg):
-
-        if arg is not None and isinstance(arg, str):
-            if arg.lower() in {'true', 't', 'yes', 'y', 'on', '1'}:
-                return True
-            elif arg.lower() in {'false', 'f', 'no', 'n', 'off', '0'}:
-                return False
-            else:
-                raise parser.error(
-                    'Please enter a boolean-like value for this argument.'
-                )
-        else:
-            pass
-
-    args.manual = string_to_bool(args.manual)
-    args.auto = string_to_bool(args.auto)
-
+    args.manual = util.string_to_bool(args.manual)
+    args.auto = util.string_to_bool(args.auto)
     logger.debug(
         f'manual: {args.manual}; auto: {args.auto}; program: {args.program};'
     )
-
     if (
         args.auto is None and
         args.loglevel is None and
@@ -139,9 +115,7 @@ def main(time_elapsed=None):
     Function called when script is called directly.
     Takes argument from argparse defined in create_parser function.
     '''
-
     args = create_parser()
-
     settings_path = os.path.join(parent_directory, 'settings/settings.json')
     settings_handler = SettingsHandler(settings_path)
     settings_file = settings_handler.load_settings()
@@ -172,11 +146,9 @@ def main(time_elapsed=None):
             )
         }
     }
-
     return settings_handler.handler(
         settings_changes=settings_changes
     )
-
 
 class SettingsHandler():
 
@@ -187,7 +159,6 @@ class SettingsHandler():
         '''
         Return setting in 'setting.json' file in a python dictionary.
         '''
-
         if (
             not os.path.isfile(self.settings_path) or
             not os.stat(self.settings_path).st_size
@@ -197,14 +168,11 @@ class SettingsHandler():
             if not os.path.isdir(settings_parent):
                 os.mkdir(settings_parent)
             with open(self.settings_path, 'w') as f:
-                json.dump(example_settings, f, indent=2)
+                json.dump(default_settings, f, indent=2)
             logger.debug('Created new settings.json file from example.')
-
         with open(self.settings_path) as f:
             settings_file = json.load(f)
-
         return settings_file
-
 
     def update_settings(self, settings_changes, settings_file):
         '''
@@ -212,7 +180,6 @@ class SettingsHandler():
         if there are differences.
         Returns contents of the file in a python dictionary.
         '''
-
         if settings_changes != settings_file:
             with open(self.settings_path, 'w') as f:
                 json.dump(settings_changes, f, indent=2)
@@ -220,9 +187,7 @@ class SettingsHandler():
             logger.debug('Settings changed!')
         else:
             logger.debug('Settings not changed.')
-
         return self.load_settings()
-
 
     def handler(self, settings_changes={}):
         '''
@@ -230,12 +195,23 @@ class SettingsHandler():
         Returns contents of 'settings.json' after updates
         in a python dictionary.
         '''
-
         settings_file = self.load_settings()
-
         logger.debug('Settings file read: {}'.format(settings_file))
         logger.debug('Settings before update: {}'.format(settings_changes))
-
+        # add missing fields to settings_file from default_settings
+        settings_file = {
+            k:( # take outer from default_settings if not in settings_file
+                {kk:v for kk, v in default_settings[k].items()}
+                if k not in settings_file
+                else { # if exists in both go deeper
+                    kk:( # if kk not in settings_file, v from default_Settings
+                        v if kk not in settings_file[k]
+                        # else from settings_file
+                        else settings_file[k][kk]
+                    ) for kk, v in default_settings[k].items()
+                }
+            ) for k in default_settings
+        }
         # nested dict update of settings_changes
         settings_changes = {
             k:( # take outer from settings_file if not in settings_changes
@@ -250,9 +226,7 @@ class SettingsHandler():
                 }
             ) for k in settings_file
         }
-
         logger.debug('Settings after update: {}'.format(settings_changes))
-
         return self.update_settings(settings_changes, settings_file)
 
 

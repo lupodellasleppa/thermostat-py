@@ -1,48 +1,33 @@
 #!/usr/bin/python3
 
+import json
 import os
 
 class LogHandler():
 
-    def __init__(self):
+    def __init__(self, log_path):
+        self.log_path = log_path
 
-        pass
-
-    def write_log(self, log_path, data):
-
+    def write_log(self, data):
         if (
-            not os.path.isfile(log_path) or
-            not os.stat(log_path).st_size
+            not os.path.isfile(self.log_path) or
+            not os.stat(self.log_path).st_size
         ):
-            with open(log_path, 'w') as f:
+            with open(self.log_path, "w") as f:
                 f.write(json.dumps([data], indent=2))
-                f.write('\n')
+                f.write("\n")
         else:
-            with open(log_path) as f:
+            with open(self.log_path) as f:
                 log_file = json.load(f)
             log_file.append(data)
-            with open(log_path, 'w') as f:
+            with open(self.log_path, "w") as f:
                 f.write(json.dumps(log_file, indent=2))
-                f.write('\n')
+                f.write("\n")
+        return "Wrote log to file."
 
-        return 'Wrote log to file.'
-
-    def save_daily_entry(
-        self, time_elapsed, last_recorded_day, current_day, daily_log_path
-    ):
-
+    def save_daily_entry(self, time_elapsed, last):
         data = {
-            'date': current_day,
-            'time_elapsed': time_elapsed
+            "date": last,
+            "time_elapsed": time_elapsed
         }
-
-        self.write_log(daily_log_path, data)
-
-        # if (
-        #     heater_poll.last_current is not None and
-        #     heater_poll.last_current['day'] != current['day']
-        # ):
-        #     {
-        #         'date': self.settings['log']['last_day_on'],
-        #         'time_elapsed': util.format_seconds(self.time_elapsed)
-        #     }
+        self.write_log(data)

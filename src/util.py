@@ -6,10 +6,10 @@ import logging
 import os
 import time
 
+from exceptions import *
 
 logger_name = 'thermostat'
 logger = logging.getLogger(logger_name)
-
 
 days_of_week = {
     0: 'monday',
@@ -30,9 +30,7 @@ def get_loglevel(level):
         'error': logging.ERROR,
         'critical': logging.CRITICAL
     }
-
     return loglevel[level.lower()]
-
 
 def get_now():
     '''
@@ -40,7 +38,6 @@ def get_now():
     Return them all in a dictionary together with
     total seconds and formatted time.
     '''
-
     current_time = datetime.datetime.now()
     current_weekday = days_of_week[current_time.weekday()]
     current_day = current_time.day
@@ -54,7 +51,6 @@ def get_now():
         seconds=current_second
     ).total_seconds()
     current_date = str(current_time.date())
-
     return {
         'datetime': current_time,
         'day': current_day,
@@ -70,9 +66,7 @@ def get_now():
         'formatted_date': current_date
     }
 
-
 def write_log(log_path, data):
-
     if not os.path.isfile(log_path) or not os.stat(log_path).st_size:
         with open(log_path, 'w') as f:
             f.write(json.dumps([data], indent=2))
@@ -84,9 +78,7 @@ def write_log(log_path, data):
         with open(log_path, 'w') as f:
             f.write(json.dumps(log_file, indent=2))
             f.write('\n')
-
     return 'Wrote log to file.'
-
 
 def format_seconds(seconds):
     '''
@@ -94,7 +86,6 @@ def format_seconds(seconds):
     rounds it, and returns a formatted string of the kind
     H:mm:SS
     '''
-
     return str(datetime.timedelta(
         seconds=round(seconds)
     ))
@@ -103,7 +94,6 @@ def five_o(time_to_wait, minutes=0, seconds=0, microseconds=0):
     '''
     Stay on the clock by compensating waiting time.
     '''
-
     if minutes:
         # compensate minutes
         to_reach_five = minutes % 5
@@ -114,17 +104,36 @@ def five_o(time_to_wait, minutes=0, seconds=0, microseconds=0):
     if microseconds:
         # compensate microseconds
         time_to_wait -= float(f'0.{microseconds:0>6}')
-
     return time_to_wait
 
 def is_number(presumed_number):
     '''
     Return true if given param is a number (int or float)
     '''
-
     is_int = isinstance(presumed_number, int)
     is_float = isinstance(presumed_number, float)
-
     return any(
         [is_int, is_float]
     )
+
+def string_to_bool(arg, parser):
+    if arg is not None and isinstance(arg, str):
+        if arg.lower() in {'true', 't', 'yes', 'y', 'on', '1'}:
+            return True
+        elif arg.lower() in {'false', 'f', 'no', 'n', 'off', '0'}:
+            return False
+        else:
+            raise parser.error(
+                'Please enter a boolean-like value for this argument.'
+            )
+    else:
+        pass
+
+def check_same_day(last, current):
+    """Returns True if day changed since last read."""
+    if last != current:
+        if current > last:
+            return True
+        else:
+            raise DateCompareException
+    return False
