@@ -90,8 +90,8 @@ def create_parser():
     logger.debug(
         f'manual: {args.manual}; auto: {args.auto}; program: {args.program};'
     )
-    args.manual = util.string_to_bool(args.manual)
-    args.auto = util.string_to_bool(args.auto)
+    args.manual = util.string_to_bool(args.manual, parser)
+    args.auto = util.string_to_bool(args.auto, parser)
     logger.debug(
         f'manual: {args.manual}; auto: {args.auto}; program: {args.program};'
     )
