@@ -125,7 +125,7 @@ def _handle_on_and_off(
     else:
         return relay.off()
 
-def _manual_mode(desired_temperature, room_temperature):
+def _manual_mode(desired_temperature, room_temperature, relay):
     """
     Action to take when MANUAL mode is True.
     Manual mode prevails over auto mode and so does desired_temperature
