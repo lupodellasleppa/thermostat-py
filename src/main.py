@@ -196,7 +196,7 @@ async def main():
     relay = _init_relay(settings, args.settings_path)
     thermometer = _init_thermometer(settings, intervals)
     # instantiate loop
-    last_relay_state = None
+    last_relay_state = relay.stats
     stop = False
     stop_time = intervals["stop_time"]
     time_elapsed = 0
@@ -255,7 +255,7 @@ async def main():
             stop = current["datetime"]
             logger.info("Stop at {}.".format(stop))
         last_relay_state = updated_settings["relay_state"]
-        if not stop and current["datetime"] - stop > stop_time:
+        if stop and current["datetime"] - stop > stop_time:
             action = asyncio.create_task(
                 _handle_on_and_off(
                     current,
