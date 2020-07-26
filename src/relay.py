@@ -108,6 +108,7 @@ class Relay(object):
         Writes new stats to file then reads the file again and returns it.
         '''
 
+        logger.debug("Writing new stats: {}".format(new_stats))
         settings = self.settings_handler.handler(
             settings_changes={
                 'relay': {

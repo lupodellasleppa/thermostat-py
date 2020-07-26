@@ -89,7 +89,9 @@ async def _write_temperatures(
     """
     try:
         received_temperature = await thermometer.request_temperatures()
+        logger.debug("Received temperature: {}".format(received_temperature))
     except ThermometerTimeout as e:
+        logger.error("Could not retrieve temperatures from themometer.")
         return e
     if received_temperature != known_temperature:
         settings_handler.handler(
@@ -186,6 +188,7 @@ async def main():
         format='{levelname:<8} {asctime} - {message}',
         style='{'
     )
+    global logger
     logger = logging.getLogger(logger_name)
     logger.setLevel(util.get_loglevel(log["loglevel"]))
     # init modules
@@ -233,6 +236,7 @@ async def main():
                 log["last_day_on"]
             )
         # create async tasks
+        logger.debug("Asking temperature to thermometer...")
         temperature = asyncio.create_task(
             _write_temperatures(
                 thermometer,
