@@ -137,3 +137,7 @@ def check_same_day(last, current):
         else:
             raise DateCompareException
     return False
+
+def stop_expired(current, stop, stop_time):
+    time_since_stop = current["datetime"] - stop
+    return time_since_stop.total_seconds() > stop_time

@@ -202,6 +202,7 @@ async def main():
     stop = False
     stop_time = intervals["stop_time"]
     time_elapsed = 0
+    # signal handling
     def signal_handler(sig_number, sig_handler):
         off_signals = {
             signal.SIGTERM, signal.SIGSEGV, signal.SIGINT
@@ -212,16 +213,16 @@ async def main():
         }
 
         if sig_number in off_signals:
+            logger.info("{} received, shutting down...".format(sig_number))
             relay.off()
             relay.clean()
             exit()
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGSEGV, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
     # start loop
     logger.info("Starting loop. Settings:\n{}".format(settings))
     while(1<2):
-        # signal handling
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGSEGV, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
         # initialize states
         action = False
         start = time.monotonic()
@@ -257,7 +258,11 @@ async def main():
             stop = current["datetime"]
             logger.info("Stop at {}.".format(stop))
         last_relay_state = updated_settings["relay_state"]
-        if not stop or (stop and current["total_seconds"] - stop > stop_time):
+        # check if stop is expired
+        if stop:
+            stop_expired = util.stop_expired(current, stop, stop_time)
+        # do stuff if there's no stop or if stop is expired
+        if not stop or stop_expired:
             action = _handle_on_and_off(
                 current,
                 paths,
@@ -297,6 +302,7 @@ async def main():
             # write only if there's a difference
             # (even if this is already managed by SettingsHandler)
             settings_handler.handler(new_settings)
+        time.sleep(intervals["settings"])
 
 if __name__ == '__main__':
     asyncio.run(main())
