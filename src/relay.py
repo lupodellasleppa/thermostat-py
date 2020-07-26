@@ -57,7 +57,7 @@ class Relay(object):
                 ' Shutting down and restarting...'
             )
             self.off()
-            self.catch_sleep(1)
+            time.sleep(1)
             self.on()
 
         return self.stats
@@ -122,39 +122,3 @@ class Relay(object):
     def update_stats(self, new_stats):
 
         self.stats = new_stats
-
-    def catch_sleep(self, seconds, temperature):
-        '''
-        Wrapper for time.sleep() catching signals.
-        '''
-
-        def signal_handler(sig_number, sig_handler):
-            '''
-            Signal handler cleans GPIOs on trigger and exits
-            '''
-
-            off_signals = {
-                signal.SIGTERM, signal.SIGSEGV, signal.SIGINT
-            }
-
-            usr_signals = {
-                signal.SIGUSR1
-            }
-
-            if sig_number in off_signals:
-                self.off()
-                logger.debug(f'Turned off channel {self.pin}')
-                self.clean()
-                logger.debug(f'Cleaned channel {self.pin}')
-                raise SystemExit
-            elif sig_number in usr_signals:
-                logger.info(
-                    'Room temperature is {}° celsius.'.format(temperature)
-                )
-
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGSEGV, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
-        signal.signal(signal.SIGUSR1, signal_handler)
-
-        time.sleep(seconds)
