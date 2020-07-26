@@ -132,7 +132,7 @@ def _manual_mode(desired_temperature, room_temperature, relay):
     over numeric values in program.json
     """
     # Room temperature is lower than desired temperature
-    if room_temperature < desired_temperature:
+    if room_temperature < desired_temperature and not relay.stats:
         return relay.on()
     # Room temperature satisfies desired temperature
     else:
@@ -156,6 +156,7 @@ def _auto_mode(
         or
         # value in program is float
         (util.is_number(program_now) and room_temperature < program_now)
+        and not relay.stats
     ):
         return relay.on()
     ### TURN OFF CASE
@@ -163,6 +164,7 @@ def _auto_mode(
         (program_now is True and room_temperature >= desired_temp)
         or
         (util.is_number(program_now) and room_temperature >= program_now)
+        and not relay.stats
     ):
         return relay.off()
 
