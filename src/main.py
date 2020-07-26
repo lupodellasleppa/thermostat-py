@@ -253,6 +253,7 @@ async def main():
         # stop for given time in settings_file when relay_state changes
         if updated_settings["relay_state"] != last_relay_state:
             stop = current["datetime"]
+            logger.info("Stop at {}.".format(stop))
         last_relay_state = updated_settings["relay_state"]
         if not stop and current["datetime"] - stop > stop_time:
             action = asyncio.create_task(
@@ -267,6 +268,7 @@ async def main():
                 )
             )
             action = await action
+            logger.info("Relay state: {}".format(action))
         # retrieve new_settings from UI and loop and write them to file
         new_settings = {}
         # TODO: new_settings = _receive_settings_updates()
