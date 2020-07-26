@@ -261,12 +261,12 @@ async def main():
         # })
         if action:
             time_elapsed = updated_settings["time_elapsed"] + (
-                time.monotonic - start
+                time.monotonic() - start
             )
         if day_changed or time_elapsed:
             new_settings.update({
                 "log": {
-                    "time_elapsed": time.monotonic() - start,
+                    "time_elapsed": round(time_elapsed),
                     "last_day_on": current["formatted_date"]
                 }
             })
