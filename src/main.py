@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import datetime
+import logging
 import signal
 # import socket
 import time
@@ -179,6 +180,14 @@ async def main():
     relay_configs = settings["relay"]
     room_temperature = settings["temperatures"]["room"]
     thermometer_configs = settings["configs"]
+    # init logger
+    logger_name = 'thermostat'
+    logging.basicConfig(
+        format='{levelname:<8} {asctime} - {message}',
+        style='{'
+    )
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(util.get_loglevel(log["loglevel"]))
     # init modules
     custom_logger = _init_loghandler(paths["daily_log"])
     relay = _init_relay(settings, args.settings_path)
@@ -202,6 +211,7 @@ async def main():
             relay.clean()
             exit()
     # start loop
+    logger.info("Starting loop. Settings:\n{}".format(settings))
     while(1<2):
         # signal handling
         signal.signal(signal.SIGINT, signal_handler)
