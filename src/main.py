@@ -256,16 +256,14 @@ async def main():
             logger.info("Stop at {}.".format(stop))
         last_relay_state = updated_settings["relay_state"]
         if not stop or (stop and current["datetime"] - stop > stop_time):
-            action = asyncio.create_task(
-                _handle_on_and_off(
-                    current,
-                    paths,
-                    relay,
-                    **{
-                        k: v for k, v in updated_settings.items()
-                        if k in _handle_on_and_off.__code__.co_varnames
-                    }
-                )
+            action = _handle_on_and_off(
+                current,
+                paths,
+                relay,
+                **{
+                    k: v for k, v in updated_settings.items()
+                    if k in _handle_on_and_off.__code__.co_varnames
+                }
             )
             action = await action
             logger.info("Relay state: {}".format(action))
