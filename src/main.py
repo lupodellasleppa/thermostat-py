@@ -95,7 +95,7 @@ async def _write_temperatures(
         return e
     if received_temperature != known_temperature:
         settings_handler.handler(
-            {"temperature": {"room": received_temperature}}
+            {"temperatures": {"room": received_temperature}}
         )
 
 # action
@@ -299,3 +299,4 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
+temperature
