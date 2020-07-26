@@ -270,13 +270,21 @@ async def main():
         #
         # })
         if action:
-            time_elapsed = updated_settings["time_elapsed"] + (
-                time.monotonic() - start
+            time_elapsed_restore = datetime.datetime.strptime(
+                updated_settings.get('time_elapsed', '0:00:00'),
+                '%H:%M:%S'
             )
+            time_elapsed = datetime.timedelta(
+                hours=time_elapsed_restore.hour,
+                minutes=time_elapsed_restore.minute,
+                seconds=time_elapsed_restore.second
+            ).total_seconds()
+            time_elapsed += round(time.monotonic() - start)
+            time_elapsed = util.format_seconds(time_elapsed)
         if day_changed or time_elapsed:
             new_settings.update({
                 "log": {
-                    "time_elapsed": round(time_elapsed),
+                    "time_elapsed": time_elapsed,
                     "last_day_on": current["formatted_date"]
                 }
             })
