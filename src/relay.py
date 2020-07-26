@@ -8,7 +8,7 @@ import RPi.GPIO as GPIO
 import signal
 import time
 
-import settings_handler
+from settings_handler import SettingsHandler
 
 
 logger_name = 'thermostat.relay'
@@ -32,6 +32,7 @@ class Relay(object):
             self.stats = relay.pop('state')
         else:
             self.stats = False
+        self.settings_handler = SettingsHandler(self.settings_path)
 
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(**relay)
@@ -97,7 +98,7 @@ class Relay(object):
 
     def read_stats(self):
 
-        settings = settings_handler.load_settings(self.settings_path)
+        settings = self.settings_handler.load_settings()
         stats = settings['relay']['state']
 
         return stats
@@ -107,8 +108,7 @@ class Relay(object):
         Writes new stats to file then reads the file again and returns it.
         '''
 
-        settings = settings_handler.handler(
-            settings_path=self.settings_path,
+        settings = self.settings_handler.handler(
             settings_changes={
                 'relay': {
                     'state': new_stats

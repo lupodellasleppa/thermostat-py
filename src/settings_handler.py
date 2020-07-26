@@ -155,7 +155,7 @@ class SettingsHandler():
     def __init__(self, settings_path):
         self.settings_path = settings_path
 
-    def load_settings(self, ):
+    def load_settings(self):
         '''
         Return setting in 'setting.json' file in a python dictionary.
         '''
