@@ -265,7 +265,6 @@ async def main():
                     if k in _handle_on_and_off.__code__.co_varnames
                 }
             )
-            action = await action
             logger.info("Relay state: {}".format(action))
         # retrieve new_settings from UI and loop and write them to file
         new_settings = {}
