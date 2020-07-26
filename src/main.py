@@ -255,7 +255,7 @@ async def main():
             stop = current["datetime"]
             logger.info("Stop at {}.".format(stop))
         last_relay_state = updated_settings["relay_state"]
-        if stop and current["datetime"] - stop > stop_time:
+        if not stop or (stop and current["datetime"] - stop > stop_time):
             action = asyncio.create_task(
                 _handle_on_and_off(
                     current,
