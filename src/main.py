@@ -31,9 +31,9 @@ def _create_parser():
 def _init_loghandler(log_path):
     return LogHandler(log_path)
 
-def _init_program(program_number, paths):
+def _init_program(program, paths):
     return Program(
-        program_number=program_number,
+        program_number=program,
         program_path=paths["program"],
         examples_path=paths["examples"]
     )
@@ -59,7 +59,7 @@ def _load_settings(settings_handler):
     mode = settings["mode"]
     manual = mode["manual"]
     auto = mode["auto"]
-    program_number = mode["program"]
+    program = mode["program"]
     desired_temp = mode["desired_temp"]
     room_temperature = settings["temperatures"]["room"]
     relay_state = settings["relay"]["state"]
@@ -69,7 +69,7 @@ def _load_settings(settings_handler):
         "mode": mode,
         "manual": manual,
         "auto": auto,
-        "program_number": program_number,
+        "program": program,
         "desired_temp": desired_temp,
         "room_temperature": room_temperature,
         "relay_state": relay_state,
@@ -105,7 +105,7 @@ def _handle_on_and_off(
         relay,
         manual,
         auto,
-        program_number,
+        program,
         desired_temp,
         room_temperature
     ):
@@ -119,7 +119,7 @@ def _handle_on_and_off(
     # AUTO MODE
     elif auto:
         return _auto_mode(
-            current, desired_temp, paths, program_number, relay, room_temperature
+            current, desired_temp, paths, program, relay, room_temperature
         )
     # BOTH MANUAL AND AUTO ARE OFF
     else:
@@ -135,6 +135,8 @@ def _manual_mode(desired_temperature, room_temperature, relay):
     if room_temperature < desired_temperature and not relay.stats:
         return relay.on()
     # Room temperature satisfies desired temperature
+    if room_temperature > desired_temperature and relay.stats:
+        return relay.off()
     else:
         return relay.off()
 
@@ -142,12 +144,12 @@ def _auto_mode(
     current,
     desired_temp,
     paths,
-    program_number,
+    program,
     relay,
     room_temperature
 ):
     # load program
-    program = _init_program(program_number, paths)
+    program = _init_program(program, paths)
     # load program setting at current day and time
     program_now = program.program[current["weekday"]][str(current["hours"])]
     ### TURN ON CASE
@@ -164,7 +166,7 @@ def _auto_mode(
         (program_now is True and room_temperature >= desired_temp)
         or
         (util.is_number(program_now) and room_temperature >= program_now)
-        and not relay.stats
+        and relay.stats
     ):
         return relay.off()
 
@@ -253,6 +255,7 @@ async def main():
             # if no value for room_temperature and read from thermometer
             # fails, retry endlessly without taking any other action
             if isinstance(temperature, ThermometerTimeout):
+                time.sleep(intervals["settings"])
                 continue
         # stop for given time in settings_file when relay_state changes
         if updated_settings["relay_state"] != last_relay_state:
