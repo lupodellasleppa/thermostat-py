@@ -199,6 +199,7 @@ async def main():
     thermometer = _init_thermometer(settings, intervals)
     # instantiate loop
     last_relay_state = relay.stats
+    last_mode = mode
     stop = False
     stop_time = intervals["stop_time"]
     time_elapsed = 0
@@ -258,6 +259,17 @@ async def main():
             stop = current["datetime"]
             logger.info("Stop at {}.".format(stop))
         last_relay_state = updated_settings["relay_state"]
+        # but cancel stop if settings changes
+        for k, v in last_mode.items():
+            if updated_settings[k] != v:
+                stop = False
+                break
+        last_mode = {
+            "manual": updated_settings["manual"],
+            "auto": updated_settings["auto"],
+            "program": updated_settings["program"],
+            "desired_temp": updated_settings["desired_temp"]
+        }
         # check if stop is expired
         if stop:
             stop_expired = util.stop_expired(current, stop, stop_time)
