@@ -263,24 +263,23 @@ async def main():
             stop = current["datetime"]
             logger.info("Stop at {}.".format(stop))
         last_relay_state = updated_settings["relay_state"]
-        # but cancel stop if settings changes or expired
-        new_mode = {
-            k: v for k, v in updated_settings.items() if k in last_mode
-        }
-        stop = (
-            current["datetime"]
-            if last_mode == new_mode and not util.stop_expired(
-                current, stop, stop_time
-            ) else False
-        )
+        # but cancel stop if settings changes
+        for k, v in last_mode.items():
+            if updated_settings[k] != v:
+                stop = False
+                break
         # update last_mode
         last_mode = {
-            k: v for k, v in updated_settings if k in {
-                "manual", "auto", "program", "desired_temp"
-            }
+            "manual": updated_settings["manual"],
+            "auto": updated_settings["auto"],
+            "program": updated_settings["program"],
+            "desired_temp": updated_settings["desired_temp"]
         }
+        # check if stop is expired
+        if stop:
+            stop_expired = util.stop_expired(current, stop, stop_time)
         # do stuff if there's no stop or if stop is expired
-        if not stop:
+        if not stop or stop_expired:
             action = _handle_on_and_off(
                 current, paths, relay, **{
                     k: v for k, v in updated_settings.items()
