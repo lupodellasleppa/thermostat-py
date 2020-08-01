@@ -9,3 +9,6 @@ class InvalidSettingsException(Exception):
 
 class ThermometerTimeout(socket.timeout):
     pass
+
+class UnknownException(socket.timeout):
+    pass

@@ -92,7 +92,7 @@ async def _write_temperatures(
         logger.debug("Received temperature: {}".format(received_temperature))
     except ThermometerTimeout as e:
         logger.error("Could not retrieve temperatures from themometer.")
-        return e
+        raise e
     if received_temperature != known_temperature:
         settings_handler.handler(
             {"temperatures": {"room": received_temperature}}
@@ -251,10 +251,11 @@ async def main():
             )
         )
         if not updated_settings["room_temperature"]:
-            temperature = await temperature
+            try:
+                temperature = await temperature
             # if no value for room_temperature and read from thermometer
             # fails, retry endlessly without taking any other action
-            if isinstance(temperature, ThermometerTimeout):
+            except ThermometerTimeout:
                 time.sleep(intervals["settings"])
                 continue
         # stop for given time in settings_file when relay_state changes
@@ -262,27 +263,26 @@ async def main():
             stop = current["datetime"]
             logger.info("Stop at {}.".format(stop))
         last_relay_state = updated_settings["relay_state"]
-        # but cancel stop if settings changes
-        for k, v in last_mode.items():
-            if updated_settings[k] != v:
-                stop = False
-                break
-        last_mode = {
-            "manual": updated_settings["manual"],
-            "auto": updated_settings["auto"],
-            "program": updated_settings["program"],
-            "desired_temp": updated_settings["desired_temp"]
+        # but cancel stop if settings changes or expired
+        new_mode = {
+            k: v for k, v in updated_settings.items() if k in last_mode
         }
-        # check if stop is expired
-        if stop:
-            stop_expired = util.stop_expired(current, stop, stop_time)
+        stop = (
+            current["datetime"]
+            if last_mode == new_mode and not util.stop_expired(
+                current, stop, stop_time
+            ) else False
+        )
+        # update last_mode
+        last_mode = {
+            k: v for k, v in updated_settings if k in {
+                "manual", "auto", "program", "desired_temp"
+            }
+        }
         # do stuff if there's no stop or if stop is expired
-        if not stop or stop_expired:
+        if not stop:
             action = _handle_on_and_off(
-                current,
-                paths,
-                relay,
-                **{
+                current, paths, relay, **{
                     k: v for k, v in updated_settings.items()
                     if k in _handle_on_and_off.__code__.co_varnames
                 }
@@ -290,22 +290,14 @@ async def main():
             logger.info("Relay state: {}".format(action))
         # retrieve new_settings from UI and loop and write them to file
         new_settings = {}
-        # TODO: new_settings = _receive_settings_updates()
+        # TODO: new_settings = _receive_settings_updates() # from UI
         # new_settings.update({
         #
         # })
-        if action:
-            time_elapsed_restore = datetime.datetime.strptime(
-                updated_settings.get('time_elapsed', '0:00:00'),
-                '%H:%M:%S'
-            )
-            time_elapsed = datetime.timedelta(
-                hours=time_elapsed_restore.hour,
-                minutes=time_elapsed_restore.minute,
-                seconds=time_elapsed_restore.second
-            ).total_seconds()
-            time_elapsed += round(time.monotonic() - start)
-            time_elapsed = util.format_seconds(time_elapsed)
+        time_since_start = round(time.monotonic() - start)
+        time_elapsed = util.increment_time_elapsed(
+            updated_settings, time_since_start
+        ) if action else 0
         if day_changed or time_elapsed:
             new_settings.update({
                 "log": {
@@ -318,6 +310,7 @@ async def main():
             # (even if this is already managed by SettingsHandler)
             settings_handler.handler(new_settings)
         time.sleep(intervals["settings"])
+    raise UnknownException('Exited main loop.')
 
 if __name__ == '__main__':
     asyncio.run(main())

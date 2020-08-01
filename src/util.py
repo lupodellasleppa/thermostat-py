@@ -138,6 +138,18 @@ def check_same_day(last, current):
             raise DateCompareException
     return False
 
-def stop_expired(current, stop, stop_time):
+def stop_expired(current, stop, stop_time) -> bool:
     time_since_stop = current["datetime"] - stop
     return time_since_stop.total_seconds() > stop_time
+
+def increment_time_elapsed(settings, n):
+    time_elapsed_restore = datetime.datetime.strptime(
+        settings.get('time_elapsed', '0:00:00'), '%H:%M:%S'
+    )
+    time_elapsed = datetime.timedelta(
+        hours=time_elapsed_restore.hour,
+        minutes=time_elapsed_restore.minute,
+        seconds=time_elapsed_restore.second
+    ).total_seconds()
+    time_elapsed += n
+    return format_seconds(time_elapsed)
