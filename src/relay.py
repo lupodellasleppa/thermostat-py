@@ -45,7 +45,7 @@ class Relay(object):
             wrote_stats = self.write_stats(True)
 
             if wrote_stats == True:
-                logger.info(f'Turned ON channel {self.pin}.')
+                logger.debug(f'Turned ON channel {self.pin}.')
             else:
                 logger.warning('Fault while writing stats.')
 
@@ -70,14 +70,14 @@ class Relay(object):
             wrote_stats = self.write_stats(False)
 
             if wrote_stats == False:
-                logger.info(f'Turned OFF channel {self.pin}.')
+                logger.debug(f'Turned OFF channel {self.pin}.')
             else:
                 logger.warning('Fault while writing stats.')
 
             self.update_stats(wrote_stats)
 
         else:
-            logger.info(f'Channel {self.pin} was already OFF.')
+            logger.debug(f'Channel {self.pin} was already OFF.')
 
         return self.stats
 
@@ -88,7 +88,7 @@ class Relay(object):
         wrote_stats = self.write_stats(False)
 
         if wrote_stats == False:
-            logger.info(f'Cleaned up channel {self.pin}.')
+            logger.debug(f'Cleaned up channel {self.pin}.')
             self.update_stats(wrote_stats)
 
         else:

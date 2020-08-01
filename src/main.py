@@ -87,19 +87,10 @@ async def _write_temperatures(
     Does nothing if recevied temperature is same as last reading from
     settings_file.
     """
-    try:
-        received_temperature = await thermometer.request_temperatures()
-        logger.debug("Received temperature: {}".format(received_temperature))
-    except ThermometerTimeout as e:
-        logger.error("Could not retrieve temperatures from themometer.")
-        raise e
-    if received_temperature != known_temperature:
-        settings_handler.handler(
-            {"temperatures": {"room": received_temperature}}
-        )
+
 
 # action
-def _handle_on_and_off(
+async def _handle_on_and_off(
         current,
         paths,
         relay,
@@ -113,16 +104,20 @@ def _handle_on_and_off(
     NOTE: relay module writes relay state to settings_file
     at every call of on() or off() methods.
     No need to rewrite that in this module."""
+    logger.debug("called action func")
     # MANUAL MODE
     if manual:
+        logger.debug("manual of _handle_on_and_off")
         return _manual_mode(desired_temp, room_temperature, relay)
     # AUTO MODE
     elif auto:
+        logger.debug("auto of _handle_on_and_off")
         return _auto_mode(
             current, desired_temp, paths, program, relay, room_temperature
         )
     # BOTH MANUAL AND AUTO ARE OFF
     else:
+        logger.debug("else of _handle_on_and_off")
         return relay.off()
 
 def _manual_mode(desired_temperature, room_temperature, relay):
@@ -210,11 +205,9 @@ async def main():
         off_signals = {
             signal.SIGTERM, signal.SIGSEGV, signal.SIGINT
         }
-
         usr_signals = {
             signal.SIGUSR1
         }
-
         if sig_number in off_signals:
             logger.info("{} received, shutting down...".format(sig_number))
             relay.off()
@@ -243,12 +236,8 @@ async def main():
             )
         # create async tasks
         logger.debug("Asking temperature to thermometer...")
-        temperature = asyncio.create_task(
-            _write_temperatures(
-                thermometer,
-                settings_handler,
-                updated_settings["room_temperature"]
-            )
+        request_temperatures = asyncio.create_task(
+            thermometer.request_temperatures()
         )
         if not updated_settings["room_temperature"]:
             try:
@@ -280,12 +269,12 @@ async def main():
             stop_expired = util.stop_expired(current, stop, stop_time)
         # do stuff if there's no stop or if stop is expired
         if not stop or stop_expired:
-            action = _handle_on_and_off(
+            action_task = asyncio.create_task(_handle_on_and_off(
                 current, paths, relay, **{
                     k: v for k, v in updated_settings.items()
                     if k in _handle_on_and_off.__code__.co_varnames
                 }
-            )
+            ))
             logger.info("Relay state: {}".format(action))
         # retrieve new_settings from UI and loop and write them to file
         new_settings = {}
@@ -293,6 +282,21 @@ async def main():
         # new_settings.update({
         #
         # })
+        logger.debug("Just before await of temp")
+        try:
+            received_temperature = await request_temperatures
+            logger.info(
+                "Received temperature: {}".format(received_temperature)
+            )
+            if received_temperature != updated_settings["room_temperature"]:
+                settings_handler.handler(
+                    {"temperatures": {"room": received_temperature}}
+                )
+        except ThermometerTimeout as e:
+            logger.warning("Could not retrieve temperatures from themometer.")
+            pass
+        logger.debug("Just before await of action")
+        action = await action_task
         time_since_start = round(time.monotonic() - start)
         time_elapsed = util.increment_time_elapsed(
             updated_settings, time_since_start
@@ -308,7 +312,10 @@ async def main():
             # write only if there's a difference
             # (even if this is already managed by SettingsHandler)
             settings_handler.handler(new_settings)
-        time.sleep(intervals["settings"])
+        try:
+            time.sleep(intervals["settings"] - (time.monotonic() - start))
+        except ValueError:
+            time.sleep(intervals["settings"])
     raise UnknownException('Exited main loop.')
 
 if __name__ == '__main__':

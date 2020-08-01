@@ -35,6 +35,7 @@ class ThermometerLocal():
         self.thermometer.sendto(b'temps_req', (self.ip, self.port))
         try:
             request = self.thermometer.recv(4096)
+            logging.info("Requesting temperatures...")
         except socket.timeout:
             raise ThermometerTimeout
         temperature = await self._parse_temperatures(
