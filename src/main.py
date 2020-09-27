@@ -266,6 +266,7 @@ class Thermostat():
         cycle_count = 0
         stop_time = self.settings["intervals"]["stop_time"]
         time_elapsed = 0
+        time_after_sleep = 0
         # start loop
         logger.info("Starting loop. Settings:\n{}".format(self.settings))
         while(1<2):
@@ -368,24 +369,33 @@ class Thermostat():
             # FINISHED ACTION: sleep then update settings
 
             try:
-                time.sleep(
+                time_to_sleep = (
                     self.settings["intervals"]["settings"] -
                     (time.monotonic() - start)
                 )
             except ValueError:
-                time.sleep(self.settings["intervals"]["settings"])
+                time_to_sleep = self.settings["intervals"]["settings"]
+            time.sleep(time_to_sleep - time_after_sleep)
+            after_sleep = time.monotonic()
+            time_after_sleep = 0
+
             # update elapsed time with heater on
             if action:
                 self.time_since_start += time.monotonic() - start
             logger.info("time_since_start: {}".format(self.time_since_start))
             time_elapsed = 0
-            if int(self.time_since_start):
-                logger.info("time_since_start(int): {}".format(int(self.time_since_start)))
+            time_to_add = int(self.time_since_start)
+            self.time_since_start -= time_to_add
+            # self.time_since_start goes "backwards"
+            # so we need to reset it sometimes
+            if not time_to_add:
+                time_to_add = round(self.time_since_start)
+                self.time_since_start = 0
+            if time_to_add:
                 time_elapsed = util.increment_time_elapsed(
-                    updated_settings, self.time_since_start
+                    updated_settings, time_to_add
                 )
                 logger.info("time_elapsed: {}".format(time_elapsed))
-                self.time_since_start -= int(self.time_since_start)
             # update settings
             if day_changed or time_elapsed:
                 new_settings.update({
@@ -398,6 +408,7 @@ class Thermostat():
                 # write only if there's a difference
                 # (even if this is already managed by SettingsHandler)
                 self.settings_handler.handler(new_settings)
+            time_after_sleep = time.monotonic() - after_sleep
         raise UnknownException('Exited main loop.')
 
 

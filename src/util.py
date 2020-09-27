@@ -149,7 +149,6 @@ def increment_time_elapsed(settings, n):
     time_elapsed_restore = datetime.datetime.strptime(
         settings["log"].get('time_elapsed', '0:00:00'), '%H:%M:%S'
     )
-    logger.info("time elapsed restore: {}".format(time_elapsed_restore))
     time_elapsed = datetime.timedelta(
         hours=time_elapsed_restore.hour,
         minutes=time_elapsed_restore.minute,
