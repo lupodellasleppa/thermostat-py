@@ -261,7 +261,8 @@ class Thermostat():
         self.iottly_sdk = _init_iottly_sdk()
 
     def _send_stuff(self, cmdpars):
-        self.send_stuff_counter = cmdpars["send_every"]
+        logger.info("Received from iottly: {}".format(cmdpars))
+        self.send_stuff_counter = int(cmdpars["send_every"])
 
     async def loop(self):
         last_relay_state = self.relay.stats
@@ -286,8 +287,8 @@ class Thermostat():
                         "manual": updated_settings["manual"],
                         "auto": updated_settings["auto"],
                         "program": updated_settings["program"],
-                        "desired_temp": update_settings["desired_temp"],
-                        "relay": update_settings["relay_configs"]["state"],
+                        "desired_temp": updated_settings["desired_temp"],
+                        "relay": updated_settings["relay_configs"]["state"],
                         "room_temperature": updated_settings["room_temperature"]
                     })
                 cycle_count += 1
