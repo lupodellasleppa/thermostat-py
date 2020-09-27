@@ -204,6 +204,7 @@ class Thermostat():
         self._init_logger()
         self._init_modules()
         self.send_stuff_counter = False
+        self.time_since_start = 0
         self.iottly_sdk.subscribe(
             cmd_type="send_stuff",
             callback=self._send_stuff
@@ -363,10 +364,16 @@ class Thermostat():
             logger.debug("Just before await of action")
             action = await action_task
             logger.info("Relay state: {}".format(action))
-            time_since_start = round(time.monotonic() - start)
-            time_elapsed = util.increment_time_elapsed(
-                updated_settings, time_since_start
-            ) if action else 0
+            self.time_since_start += time.monotonic() - start
+            logger.info("time_since_start".format(self.time_since_start))
+            time_elapsed = 0
+            logger.info("time_elapsed".format(time_elapsed))
+            if int(self.time_since_start) and action:
+                logger.info("time_since_start(int)".format(int(self.time_since_start)))
+                time_elapsed = util.increment_time_elapsed(
+                    updated_settings, self.time_since_start
+                )
+                self.time_since_start = 0
             if day_changed or time_elapsed:
                 new_settings.update({
                     "log": {
