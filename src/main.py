@@ -396,6 +396,24 @@ class Thermostat():
 
 def main():
     thermostat = Thermostat()
+
+    # signal handling
+    def signal_handler(sig_number, sig_handler):
+        off_signals = {
+            signal.SIGTERM, signal.SIGSEGV, signal.SIGINT
+        }
+        usr_signals = {
+            signal.SIGUSR1
+        }
+        if sig_number in off_signals:
+            logger.info("{} received, shutting down...".format(sig_number))
+            thermostat.relay.off()
+            thermostat.relay.clean()
+            exit()
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGSEGV, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     try:
         asyncio.run(thermostat.loop())
     except Exception as e:
