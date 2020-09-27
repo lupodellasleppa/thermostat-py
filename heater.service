@@ -2,7 +2,7 @@
 Description=heater service control
 
 [Service]
-User=pi
+User=root
 Type=idle
 Restart=on-failure
 RestartSec=5
