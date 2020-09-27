@@ -157,11 +157,12 @@ def _manual_mode(desired_temperature, room_temperature, relay):
     over numeric values in program.json
     """
     # Room temperature is lower than desired temperature
-    if room_temperature < desired_temperature and not relay.stats:
-        return relay.on()
+    if room_temperature < desired_temperature:
+        if not relay.stats:
+            return relay.on()
+        else:
+            return relay.stats
     # Room temperature satisfies desired temperature
-    if room_temperature > desired_temperature and relay.stats:
-        return relay.off()
     else:
         return relay.off()
 
@@ -184,19 +185,12 @@ def _auto_mode(
         or
         # value in program is float
         (util.is_number(program_now) and room_temperature < program_now)
-        and not relay.stats
     ):
-        return relay.on()
+        if not relay.stats:
+            return relay.on()
+        else:
+            return relay.stats
     ### TURN OFF CASE
-    elif (# Value in program is bool
-        (program_now is True and room_temperature >= desired_temp)
-        or
-        (util.is_number(program_now) and room_temperature >= program_now)
-        and relay.stats
-    ):
-        return relay.off()
-
-    ### ANYTHING ELSE GOES TO OFF, JUST IN CASE
     else:
         return relay.off()
 
@@ -346,7 +340,6 @@ class Thermostat():
                         if k in _handle_on_and_off.__code__.co_varnames
                     }
                 ))
-                logger.info("Relay state: {}".format(action))
             # retrieve new_settings from UI and loop and write them to file
             new_settings = {}
             logger.debug("Just before await of temp")
@@ -369,6 +362,7 @@ class Thermostat():
                 pass
             logger.debug("Just before await of action")
             action = await action_task
+            logger.info("Relay state: {}".format(action))
             time_since_start = round(time.monotonic() - start)
             time_elapsed = util.increment_time_elapsed(
                 updated_settings, time_since_start
