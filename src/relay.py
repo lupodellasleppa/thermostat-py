@@ -17,7 +17,7 @@ logger = logging.getLogger(logger_name)
 
 class Relay(object):
 
-    def __init__(self, relay, settings_path):
+    def __init__(self, relay, settings_handler):
         '''
         Takes a dictionary containing what GPIO.setup needs as first argument
         plus path to thermostat settings to write relay state at each operation
@@ -27,12 +27,11 @@ class Relay(object):
         '''
 
         self.pin = str(relay['channel'])
-        self.settings_path = settings_path
         if 'state' in relay.keys():
             self.stats = relay.pop('state')
         else:
             self.stats = False
-        self.settings_handler = SettingsHandler(self.settings_path)
+        self.settings_handler = settings_handler
 
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(**relay)

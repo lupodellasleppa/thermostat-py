@@ -36,7 +36,8 @@ default_settings = {
   },
   "configs": {
     "UDP_IP": "127.0.0.1",
-    "UDP_port": 2222
+    "UDP_port": 2222,
+    "direct": True
   },
   "intervals": {
     "settings": 1,

@@ -8,13 +8,13 @@ import signal
 # import socket
 import time
 
-# from iottly_sdk import IottlySDK
+from iottly_sdk import IottlySDK
 from exceptions import *
 from log_handler import LogHandler
 from program import Program
 from relay import Relay
 from settings_handler import SettingsHandler
-from thermometer import ThermometerLocal
+from thermometer import ThermometerLocal, ThermometerDirect
 import util
 
 
@@ -26,10 +26,32 @@ def _create_parser():
     args = parser.parse_args()
     return args
 
+# iottlySDK functions
+
+def on_agent_status_changed(status):
+    logger.warning('iottly agent status: {}'.format(status))
+
+
+def on_connection_status_changed(status):
+    logger.warning('iottly agent mqtt status: {}'.format(status))
+
+
 # module inits
+
+def _init_iottly_sdk():
+    iottly_sdk =  IottlySDK(
+        name='thermostat-py',
+        max_buffered_msgs=100,
+        on_agent_status_changed=on_agent_status_changed,
+        on_connection_status_changed=on_connection_status_changed
+    )
+    iottly_sdk.start()
+    return iottly_sdk
+
 
 def _init_loghandler(log_path):
     return LogHandler(log_path)
+
 
 def _init_program(program, paths):
     return Program(
@@ -38,18 +60,24 @@ def _init_program(program, paths):
         examples_path=paths["examples"]
     )
 
+
 def _init_relay(settings, settings_path):
-    return Relay(settings["relay"], settings_path)
+    return Relay(settings, settings_path)
+
 
 def _init_thermometer(settings, intervals):
-    thermometer_ip, thermometer_port = settings["configs"]
-    return ThermometerLocal(
-        settings["configs"]["UDP_IP"],
-        settings["configs"]["UDP_port"],
-        intervals["temperature"]
-    )
+    if settings['direct']:
+        return ThermometerDirect()
+    else:
+        thermometer_ip, thermometer_port = settings["configs"]
+        return ThermometerLocal(
+            settings["UDP_IP"],
+            settings["UDP_port"],
+            intervals["temperature"]
+        )
 
 # settings file interfacing
+
 def _load_settings(settings_handler):
     """
     Loads informations that change in settings_file at every loop.
@@ -77,6 +105,7 @@ def _load_settings(settings_handler):
         "time_elapsed": time_elapsed
     }
 
+
 async def _write_temperatures(
     thermometer, settings_handler, known_temperature
 ):
@@ -88,12 +117,12 @@ async def _write_temperatures(
     settings_file.
     """
 
-
 # action
+
 async def _handle_on_and_off(
         current,
-        paths,
         relay,
+        paths,
         manual,
         auto,
         program,
@@ -120,6 +149,7 @@ async def _handle_on_and_off(
         logger.debug("else of _handle_on_and_off")
         return relay.off()
 
+
 def _manual_mode(desired_temperature, room_temperature, relay):
     """
     Action to take when MANUAL mode is True.
@@ -134,6 +164,7 @@ def _manual_mode(desired_temperature, room_temperature, relay):
         return relay.off()
     else:
         return relay.off()
+
 
 def _auto_mode(
     current,
@@ -169,155 +200,202 @@ def _auto_mode(
     else:
         return relay.off()
 
-async def main():
-    args = _create_parser()
-    # load settings
-    settings_handler = SettingsHandler(args.settings_path)
-    settings = settings_handler.load_settings()
-    log = settings["log"]
-    mode = settings["mode"]
-    paths = settings["paths"]
-    intervals = settings["intervals"]
-    relay_configs = settings["relay"]
-    room_temperature = settings["temperatures"]["room"]
-    thermometer_configs = settings["configs"]
-    # init logger
-    logger_name = 'thermostat'
-    logging.basicConfig(
-        format='{levelname:<8} {asctime} - {message}',
-        style='{'
-    )
-    global logger
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(util.get_loglevel(log["loglevel"]))
-    # init modules
-    custom_logger = _init_loghandler(paths["daily_log"])
-    relay = _init_relay(settings, args.settings_path)
-    thermometer = _init_thermometer(settings, intervals)
-    # instantiate loop
-    last_relay_state = relay.stats
-    last_mode = mode
-    stop = False
-    stop_time = intervals["stop_time"]
-    time_elapsed = 0
-    # signal handling
-    def signal_handler(sig_number, sig_handler):
-        off_signals = {
-            signal.SIGTERM, signal.SIGSEGV, signal.SIGINT
-        }
-        usr_signals = {
-            signal.SIGUSR1
-        }
-        if sig_number in off_signals:
-            logger.info("{} received, shutting down...".format(sig_number))
-            relay.off()
-            relay.clean()
-            exit()
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGSEGV, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-    # start loop
-    logger.info("Starting loop. Settings:\n{}".format(settings))
-    while(1<2):
-        # initialize states
-        action = False
-        start = time.monotonic()
-        # update current time and values from settings_file
-        current = util.get_now()
-        updated_settings = _load_settings(settings_handler)
-        # log if day_changed
-        day_changed = util.check_same_day(
-            updated_settings["last_day_on"], current["formatted_date"]
+# main
+
+class Thermostat():
+    def __init__(self):
+        args = _create_parser()
+        self.settings_handler = SettingsHandler(args.settings_path)
+        self.settings = self._load_settings()
+        self._init_logger()
+        self._init_modules()
+        self.send_stuff_counter = False
+        self.iottly_sdk.subscribe(
+            cmd_type="send_stuff",
+            callback=self._send_stuff
         )
-        if day_changed:
-            custom_logger.save_daily_entry(
-                log["time_elapsed"],
-                log["last_day_on"]
-            )
-        # create async tasks
-        logger.debug("Asking temperature to thermometer...")
-        request_temperatures = asyncio.create_task(
-            thermometer.request_temperatures()
-        )
-        if not updated_settings["room_temperature"]:
-            try:
-                temperature = await temperature
-            # if no value for room_temperature and read from thermometer
-            # fails, retry endlessly without taking any other action
-            except ThermometerTimeout:
-                time.sleep(intervals["settings"])
-                continue
-        # stop for given time in settings_file when relay_state changes
-        if updated_settings["relay_state"] != last_relay_state:
-            stop = current["datetime"]
-            logger.info("Stop at {}.".format(stop))
-        last_relay_state = updated_settings["relay_state"]
-        # but cancel stop if settings changes
-        for k, v in last_mode.items():
-            if updated_settings[k] != v:
-                stop = False
-                break
-        # update last_mode
-        last_mode = {
-            "manual": updated_settings["manual"],
-            "auto": updated_settings["auto"],
-            "program": updated_settings["program"],
-            "desired_temp": updated_settings["desired_temp"]
+
+    def _load_settings(self):
+        settings = self.settings_handler.load_settings()
+        return {
+            "log": settings["log"],
+            "mode": settings["mode"],
+            "manual": settings["mode"]["manual"],
+            "auto": settings["mode"]["auto"],
+            "program": settings["mode"]["program"],
+            "desired_temp": settings["mode"]["desired_temp"],
+            "paths": settings["paths"],
+            "intervals": settings["intervals"],
+            "relay_configs": settings["relay"],
+            "room_temperature": settings["temperatures"]["room"],
+            "thermometer_configs": settings["configs"],
+            "log": settings["log"]
         }
-        # check if stop is expired
-        if stop:
-            stop_expired = util.stop_expired(current, stop, stop_time)
-        # do stuff if there's no stop or if stop is expired
-        if not stop or stop_expired:
-            action_task = asyncio.create_task(_handle_on_and_off(
-                current, paths, relay, **{
-                    k: v for k, v in updated_settings.items()
-                    if k in _handle_on_and_off.__code__.co_varnames
-                }
-            ))
-            logger.info("Relay state: {}".format(action))
-        # retrieve new_settings from UI and loop and write them to file
-        new_settings = {}
-        # TODO: new_settings = _receive_settings_updates() # from UI
-        # new_settings.update({
-        #
-        # })
-        logger.debug("Just before await of temp")
-        try:
-            received_temperature = await request_temperatures
-            logger.info(
-                "Received temperature: {}".format(received_temperature)
+
+    def _init_logger(self):
+        logger_name = 'thermostat'
+        logging.basicConfig(
+            format='{levelname:<8} {asctime} - {message}',
+            style='{'
+        )
+        global logger
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(
+            util.get_loglevel(
+                self.settings["log"]["loglevel"]
             )
-            if received_temperature != updated_settings["room_temperature"]:
-                settings_handler.handler(
-                    {"temperatures": {"room": received_temperature}}
+        )
+
+    def _init_modules(self):
+        self.custom_logger = _init_loghandler(
+            self.settings["paths"]["daily_log"]
+        )
+        self.relay = _init_relay(
+            self.settings["relay_configs"],
+            self.settings_handler
+        )
+        self.thermometer = _init_thermometer(
+            self.settings["thermometer_configs"],
+            self.settings["intervals"]
+        )
+        self.iottly_sdk = _init_iottly_sdk()
+
+    def _send_stuff(self, cmdpars):
+        self.send_stuff_counter = cmdpars["send_every"]
+
+    async def loop(self):
+        last_relay_state = self.relay.stats
+        last_mode = self.settings["mode"]
+        stop = False
+        cycle_count = 0
+        stop_time = self.settings["intervals"]["stop_time"]
+        time_elapsed = 0
+        # start loop
+        logger.info("Starting loop. Settings:\n{}".format(self.settings))
+        while(1<2):
+            # initialize states
+            action = False
+            start = time.monotonic()
+            # update current time and values from settings_file
+            current = util.get_now()
+            updated_settings = self._load_settings()
+            # send stuff to iottly
+            if self.send_stuff_counter:
+                if not cycle_count % self.send_stuff_counter:
+                    self.iottly_sdk.send({
+                        "manual": updated_settings["manual"],
+                        "auto": updated_settings["auto"],
+                        "program": updated_settings["program"],
+                        "desired_temp": update_settings["desired_temp"],
+                        "relay": update_settings["relay_configs"]["state"],
+                        "room_temperature": updated_settings["room_temperature"]
+                    })
+                cycle_count += 1
+            else:
+                cycle_count = 0
+            # log if day_changed
+            day_changed = util.check_same_day(
+                updated_settings["log"]["last_day_on"],
+                current["formatted_date"]
+            )
+            if day_changed:
+                custom_logger.save_daily_entry(
+                    updated_settings["log"]["time_elapsed"],
+                    updated_settings["log"]["last_day_on"]
                 )
-        except ThermometerTimeout as e:
-            logger.warning("Could not retrieve temperatures from themometer.")
-            pass
-        logger.debug("Just before await of action")
-        action = await action_task
-        time_since_start = round(time.monotonic() - start)
-        time_elapsed = util.increment_time_elapsed(
-            updated_settings, time_since_start
-        ) if action else 0
-        if day_changed or time_elapsed:
-            new_settings.update({
-                "log": {
-                    "time_elapsed": time_elapsed,
-                    "last_day_on": current["formatted_date"]
-                }
-            })
-        if new_settings:
-            # write only if there's a difference
-            # (even if this is already managed by SettingsHandler)
-            settings_handler.handler(new_settings)
-        try:
-            time.sleep(intervals["settings"] - (time.monotonic() - start))
-        except ValueError:
-            time.sleep(intervals["settings"])
-    raise UnknownException('Exited main loop.')
+            # create async tasks
+            logger.debug("Asking temperature to thermometer...")
+            request_temperatures = asyncio.create_task(
+                self.thermometer.request_temperatures()
+            )
+            if not updated_settings["room_temperature"]:
+                try:
+                    temperature = await temperature
+                # if no value for room_temperature and read from thermometer
+                # fails, retry endlessly without taking any other action
+                except ThermometerTimeout:
+                    time.sleep(intervals["settings"])
+                    continue
+            # stop for given time in settings_file when relay_state changes
+            if updated_settings["relay_configs"]["state"] != last_relay_state:
+                stop = current["datetime"]
+                logger.info("Stop at {}.".format(stop))
+            last_relay_state = updated_settings["relay_configs"]["state"]
+            # but cancel stop if settings changes
+            for k, v in last_mode.items():
+                if updated_settings[k] != v:
+                    stop = False
+                    break
+            # update last_mode
+            last_mode = {
+                "manual": updated_settings["manual"],
+                "auto": updated_settings["auto"],
+                "program": updated_settings["program"],
+                "desired_temp": updated_settings["desired_temp"]
+            }
+            # check if stop is expired
+            if stop:
+                stop_expired = util.stop_expired(current, stop, stop_time)
+            # do stuff if there's no stop or if stop is expired
+            if not stop or stop_expired:
+                action_task = asyncio.create_task(_handle_on_and_off(
+                    current, self.relay, **{
+                        k: v for k, v in updated_settings.items()
+                        # unpacks only for params in func signature
+                        if k in _handle_on_and_off.__code__.co_varnames
+                    }
+                ))
+                logger.info("Relay state: {}".format(action))
+            # retrieve new_settings from UI and loop and write them to file
+            new_settings = {}
+            logger.debug("Just before await of temp")
+            try:
+                received_temperature = await request_temperatures
+                logger.info(
+                    "Received temperature: {}".format(received_temperature)
+                )
+                if (
+                    received_temperature !=
+                    updated_settings["room_temperature"]
+                ):
+                    self.settings_handler.handler(
+                        {"temperatures": {"room": received_temperature}}
+                    )
+            except ThermometerTimeout as e:
+                logger.warning(
+                    "Could not retrieve temperatures from themometer."
+                )
+                pass
+            logger.debug("Just before await of action")
+            action = await action_task
+            time_since_start = round(time.monotonic() - start)
+            time_elapsed = util.increment_time_elapsed(
+                updated_settings, time_since_start
+            ) if action else 0
+            if day_changed or time_elapsed:
+                new_settings.update({
+                    "log": {
+                        "time_elapsed": time_elapsed,
+                        "last_day_on": current["formatted_date"]
+                    }
+                })
+            if new_settings:
+                # write only if there's a difference
+                # (even if this is already managed by SettingsHandler)
+                settings_handler.handler(new_settings)
+            try:
+                time.sleep(
+                    self.settings["intervals"]["settings"] -
+                    (time.monotonic() - start)
+                )
+            except ValueError:
+                time.sleep(self.settings["intervals"]["settings"])
+        raise UnknownException('Exited main loop.')
+
+
+def main():
+    thermostat = Thermostat()
+    asyncio.run(thermostat.loop())
 
 if __name__ == '__main__':
-    asyncio.run(main())
-temperature
+    main()
