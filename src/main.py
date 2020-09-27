@@ -295,7 +295,7 @@ class Thermostat():
                 current["formatted_date"]
             )
             if day_changed:
-                custom_logger.save_daily_entry(
+                self.custom_logger.save_daily_entry(
                     updated_settings["log"]["time_elapsed"],
                     updated_settings["log"]["last_day_on"]
                 )
@@ -365,14 +365,14 @@ class Thermostat():
             action = await action_task
             logger.info("Relay state: {}".format(action))
             self.time_since_start += time.monotonic() - start
-            logger.info("time_since_start".format(self.time_since_start))
+            logger.info("time_since_start: {}".format(self.time_since_start))
             time_elapsed = 0
-            logger.info("time_elapsed".format(time_elapsed))
             if int(self.time_since_start) and action:
-                logger.info("time_since_start(int)".format(int(self.time_since_start)))
+                logger.info("time_since_start(int): {}".format(int(self.time_since_start)))
                 time_elapsed = util.increment_time_elapsed(
                     updated_settings, self.time_since_start
                 )
+                logger.info("time_elapsed: {}".format(time_elapsed))
                 self.time_since_start = 0
             if day_changed or time_elapsed:
                 new_settings.update({

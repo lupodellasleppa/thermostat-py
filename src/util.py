@@ -147,12 +147,14 @@ def stop_expired(current, stop, stop_time) -> bool:
 
 def increment_time_elapsed(settings, n):
     time_elapsed_restore = datetime.datetime.strptime(
-        settings.get('time_elapsed', '0:00:00'), '%H:%M:%S'
+        settings["log"].get('time_elapsed', '0:00:00'), '%H:%M:%S'
     )
+    logger.info("time elapsed restore: {}".format(time_elapsed_restore))
     time_elapsed = datetime.timedelta(
         hours=time_elapsed_restore.hour,
         minutes=time_elapsed_restore.minute,
         seconds=time_elapsed_restore.second
     ).total_seconds()
     time_elapsed += n
+    logger.info("time_elapsed PIÙ N: {}".format(time_elapsed))
     return format_seconds(time_elapsed)
