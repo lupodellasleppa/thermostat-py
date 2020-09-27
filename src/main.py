@@ -382,7 +382,7 @@ class Thermostat():
             if new_settings:
                 # write only if there's a difference
                 # (even if this is already managed by SettingsHandler)
-                settings_handler.handler(new_settings)
+                self.settings_handler.handler(new_settings)
             try:
                 time.sleep(
                     self.settings["intervals"]["settings"] -
@@ -395,7 +395,12 @@ class Thermostat():
 
 def main():
     thermostat = Thermostat()
-    asyncio.run(thermostat.loop())
+    try:
+        asyncio.run(thermostat.loop())
+    except Exception as e:
+        thermostat.relay.clean()
+        logger.exception(e)
+        raise UnknownException(e)
 
 if __name__ == '__main__':
     main()
