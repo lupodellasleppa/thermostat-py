@@ -3,9 +3,14 @@
 import asyncio
 import json
 import logging
+import os
 import socket
 
 from exceptions import *
+
+
+class ConfigurationError(BaseException):
+    pass
 
 
 class ThermometerLocal():
@@ -43,9 +48,33 @@ class ThermometerLocal():
         )
         return temperature
 
+
 class ThermometerDirect():
     """
     For future implementation of temperature sensor
     directly attached to RaspberryPi
     """
-    pass
+    def __init__(self):
+        if not self.check_pin_configuration():
+            raise ConfigurationError(
+                "GPIO pins are not correctly configured"
+                " to read from temperature sensor."
+            )
+
+    def check_pin_configuration(self):
+        with open('/boot/config.txt') as f:
+            config = f.readlines()
+        # check there's a line beginning with dtoverlay=w1-gpio
+        if any([x.strip().startswith('dtoverlay=w1-gpio') for x in config]):
+            return True
+
+    async def request_temperatures(self):
+        devices_dir = '/sys/bus/w1/devices'
+        devices = os.listdir(devices_dir)
+        for device in devices:
+            if device.startswith('28'):
+                thermometer = os.path.join(devices_dir, device)
+        data = os.path.join(thermometer, 'w1_slave')
+        with open(data) as f:
+            temperature = int(f.readlines()[-1].split('=')[-1]) / 1000
+        return temperature
