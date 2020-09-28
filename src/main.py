@@ -19,7 +19,6 @@ import util
 
 
 # utilities strictly related to this module
-
 def _create_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("settings_path")
@@ -104,18 +103,6 @@ def _load_settings(settings_handler):
         "last_day_on": last_day_on,
         "time_elapsed": time_elapsed
     }
-
-
-async def _write_temperatures(
-    thermometer, settings_handler, known_temperature
-):
-    """
-    Asks the thermometer for current temperature.
-    Writes the new value to settings_file.
-    Returns exception on failure.
-    Does nothing if recevied temperature is same as last reading from
-    settings_file.
-    """
 
 # action
 
