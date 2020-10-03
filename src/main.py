@@ -384,11 +384,17 @@ class Thermostat():
                 )
                 logger.info("time_elapsed: {}".format(time_elapsed))
             # update settings
-            if day_changed or time_elapsed:
+            if day_changed:
                 new_settings.update({
                     "log": {
-                        "time_elapsed": time_elapsed,
+                        "time_elapsed": "0:00:00",
                         "last_day_on": current["formatted_date"]
+                    }
+                })
+            if time_elapsed:
+                new_settings.update({
+                    "log": {
+                        "time_elapsed": time_elapsed
                     }
                 })
             if new_settings:
