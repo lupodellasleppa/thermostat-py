@@ -374,14 +374,14 @@ class Thermostat():
 
             # FINISHED ACTION: sleep then update settings
 
-            try:
-                time_to_sleep = (
-                    self.settings["intervals"]["settings"] -
-                    (time.monotonic() - start)
-                )
-            except ValueError:
-                time_to_sleep = self.settings["intervals"]["settings"]
-            time.sleep(time_to_sleep - time_after_sleep)
+            # interval is X we need to sleep for
+            # X - time spent until now
+            # otherwise we will sleep for more than X
+            time_to_sleep = (
+                self.settings["intervals"]["settings"] -
+                (time.monotonic() - start)
+            )
+            time.sleep(max(0, time_to_sleep - time_after_sleep))
             after_sleep = time.monotonic()
             time_after_sleep = 0
 
