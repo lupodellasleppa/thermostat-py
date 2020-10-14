@@ -439,7 +439,7 @@ def main():
             signal.SIGTERM, signal.SIGSEGV, signal.SIGINT
         }
         usr_signals = {
-            signal.SIGUSR1
+            signal.SIGUSR1, signal.SIGHUP
         }
         if sig_number in off_signals:
             logger.info("{} received, shutting down...".format(sig_number))
@@ -453,6 +453,8 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGSEGV, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGUSR1, signal_handler)
+    signal.signal(signal.SIGHUP, signal_handler)
 
     try:
         asyncio.run(thermostat.loop())

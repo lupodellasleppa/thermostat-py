@@ -28,11 +28,12 @@ default_settings = {
     "time_elapsed": "0:00:00",
   },
   "paths": {
-    "global": os.path.join(parent_directory, "logs/global.json"),
     "daily_log": os.path.join(parent_directory, "logs/log.json"),
-    "relay_stat": os.path.join(parent_directory, "settings/stats.json"),
+    "examples": os.path.join(parent_directory, "examples"),
+    "global": os.path.join(parent_directory, "logs/global.json"),
+    "iottly": "/opt/iottly.com-agent",
     "program": os.path.join(parent_directory, "programs/program.json"),
-    "examples": os.path.join(parent_directory, "examples")
+    "relay_stat": os.path.join(parent_directory, "settings/stats.json")
   },
   "configs": {
     "UDP_IP": "127.0.0.1",
