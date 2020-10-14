@@ -3,7 +3,9 @@
 import argparse
 import asyncio
 import datetime
+import json
 import logging
+import os
 import signal
 # import socket
 import time
@@ -24,6 +26,20 @@ def _create_parser():
     parser.add_argument("settings_path")
     args = parser.parse_args()
     return args
+
+
+def _retrieve_iottly_info(iottly_path):
+    """
+    Returns iottly project ID and device UUID from settings
+    """
+    iottly_settings_path = os.path.join(
+        iottly_path, "etc", "iottly", "settings.json"
+    )
+    with open(iottly_settings_path) as f:
+        iottly_settings = json.load(f)
+    project_id = iottly_settings["IOTTLY_PROJECT_ID"]
+    device_id = iottly_settings["IOTTLY_MQTT_DEVICE_USER"]
+    return project_id, device_id
 
 # iottlySDK functions
 
@@ -188,6 +204,8 @@ class Thermostat():
         args = _create_parser()
         self.settings_handler = SettingsHandler(args.settings_path)
         self.settings = self._load_settings()
+        iottly_path = self.settings["paths"]["iottly"]
+        self.project_id, self.device_id = _retrieve_iottly_info(iottly_path)
         self._init_logger()
         self._init_modules()
         self.send_stuff_counter = False
@@ -244,7 +262,8 @@ class Thermostat():
 
     def _send_stuff(self, cmdpars):
         logger.info("Received from iottly: {}".format(cmdpars))
-        self.send_stuff_counter = int(cmdpars["send_every"])
+        if cmdpars["deviceID"] == self.device_id:
+            self.send_stuff_counter = int(cmdpars["send_every"])
 
     async def loop(self):
         last_relay_state = self.relay.stats
