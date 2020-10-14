@@ -56,8 +56,14 @@ def on_connection_status_changed(status):
 
 # module inits
 
+class WSDK(IottlySDK):
+    def _process_msg_from_agent(self, msg):
+        logger.info("MSG FROM AGENT: {}".format(msg))
+        super()._process_msg_from_agent(msg)
+
+
 def _init_iottly_sdk():
-    iottly_sdk =  IottlySDK(
+    iottly_sdk = WSDK(
         name='thermostat-py',
         max_buffered_msgs=100,
         on_agent_status_changed=on_agent_status_changed,
