@@ -446,6 +446,10 @@ def main():
             thermostat.relay.off()
             thermostat.relay.clean()
             exit()
+        elif sig_number in usr_signals:
+            thermostat.iottly_sdk._process_msg_from_agent(
+                '{"data": {"send_stuff": {"send_every": "0", "deviceID": "b563d80a-feb4-46a7-8f68-a3802fb3a387"}}}"'
+            )
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGSEGV, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
