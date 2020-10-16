@@ -294,7 +294,7 @@ class Thermostat():
             # send stuff to iottly
             if self.send_stuff_counter:
                 if not cycle_count % self.send_stuff_counter:
-                    self.iottly_sdk.send({
+                    self.iottly_sdk.call_agent('send_message', {
                         "manual": updated_settings["manual"],
                         "auto": updated_settings["auto"],
                         "program": updated_settings["program"],
