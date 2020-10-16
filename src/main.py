@@ -490,7 +490,9 @@ def main():
         logger.info("flask data: {}".format(data))
         try:
             thermostat.iottly_sdk._process_msg_from_agent(data)
-            return ("", 200)
+            resp = flask.Response("", status=200)
+            resp.headers['Access-Control-Allow-Origin'] = '192.168.1.27'
+            return resp
         except:
             return
 
@@ -498,7 +500,9 @@ def main():
     def return_stats():
         stats = thermostat.stats
         return_code = 200 if stats else 404
-        return (thermostat.stats, return_code)
+        resp = flask.Response(thermostat.stats, status=return_code)
+        resp.headers['Access-Control-Allow-Origin'] = '192.168.1.27'
+        return resp
 
     def run_thermostat():
         asyncio.run(thermostat.loop())
