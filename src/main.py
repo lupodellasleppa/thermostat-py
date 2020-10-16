@@ -449,8 +449,9 @@ def main():
         methods=["POST"]
     )
     def send_to_sdk(projectID, deviceID):
-        data = {}
-        data["data"] = flask.request.json
+        cmd_type, values = flask.request.json.values()
+        data = {cmd_type: values}
+        # data["data"] = flask.request.json
         data = json.dumps(data)
         logger.info("flask data: {}".format(data))
         try:
