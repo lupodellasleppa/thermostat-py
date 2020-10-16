@@ -11,7 +11,7 @@ import signal
 import threading
 import time
 
-from flask import Flask
+import flask
 from iottly_sdk import IottlySDK
 
 from exceptions import *
@@ -203,7 +203,8 @@ def _auto_mode(
 # main
 
 class Thermostat():
-    def __init__(self):
+    def __init__(self, exit):
+        self.exit = exit
         args = _create_parser()
         self.settings_handler = SettingsHandler(args.settings_path)
         self.settings = self._load_settings()
@@ -278,7 +279,7 @@ class Thermostat():
         time_after_sleep = 0
         # start loop
         logger.info("Starting loop. Settings:\n{}".format(self.settings))
-        while(1<2):
+        while not self.exit.is_set():
             # initialize states
             action = False
             start = time.monotonic()
@@ -424,13 +425,16 @@ class Thermostat():
                 # (even if this is already managed by SettingsHandler)
                 self.settings_handler.handler(new_settings)
             time_after_sleep = time.monotonic() - after_sleep
-        raise UnknownException('Exited main loop.')
+        # raise UnknownException('Exited main loop.')
+        self.relay.off()
+        self.relay.clean()
 
 
 def main():
-    thermostat = Thermostat()
+    thermostat_exit = threading.Event()
+    thermostat = Thermostat(thermostat_exit)
 
-    app = Flask(__name__)
+    app = flask.Flask(__name__)
 
     app.logger = logger
 
@@ -439,11 +443,22 @@ def main():
         methods=["POST"]
     )
     def send_to_sdk(projectID, deviceID):
-        data = flask.request.json
+        data = {}
+        data["data"] = flask.request.json
+        data = json.dumps(data)
         logger.info("flask data: {}".format(data))
-        thermostat.iottly_sdk._process_msg_from_agent(data)
+        try:
+            thermostat.iottly_sdk._process_msg_from_agent(data)
+            return ("", 200)
+        except:
+            return
 
-    flask_app = threading.Thread(target=app.run, name='thermostat-local')
+    def run_thermostat():
+        asyncio.run(thermostat.loop())
+
+    thermostat_loop = threading.Thread(
+        target=run_thermostat, name='thermostat-loop'
+    )
 
     # signal handling
     def signal_handler(sig_number, sig_handler):
@@ -455,8 +470,7 @@ def main():
         }
         if sig_number in off_signals:
             logger.info("{} received, shutting down...".format(sig_number))
-            thermostat.relay.off()
-            thermostat.relay.clean()
+            thermostat_exit.set()
             exit()
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGSEGV, signal_handler)
@@ -464,8 +478,8 @@ def main():
 
     try:
         # start the flask server for local APIs
-        flask_app.start()
-        asyncio.run(thermostat.loop())
+        thermostat_loop.start()
+        app.run()
     except Exception as e:
         thermostat.relay.clean()
         logger.exception(e)
