@@ -294,13 +294,15 @@ class Thermostat():
             # send stuff to iottly
             if self.send_stuff_counter:
                 if not cycle_count % self.send_stuff_counter:
-                    self.iottly_sdk.call_agent('send_message', {
-                        "manual": updated_settings["manual"],
-                        "auto": updated_settings["auto"],
-                        "program": updated_settings["program"],
-                        "desired_temp": updated_settings["desired_temp"],
-                        "relay": updated_settings["relay_configs"]["state"],
-                        "room_temperature": updated_settings["room_temperature"]
+                    self.iottly_sdk.call_agent('send_message', {"msg":
+                        {
+                            "manual": updated_settings["manual"],
+                            "auto": updated_settings["auto"],
+                            "program": updated_settings["program"],
+                            "desired_temp": updated_settings["desired_temp"],
+                            "relay": updated_settings["relay_configs"]["state"],
+                            "room_temperature": updated_settings["room_temperature"]
+                        }
                     })
                 cycle_count += 1
             else:
