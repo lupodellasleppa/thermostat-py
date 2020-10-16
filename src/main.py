@@ -8,9 +8,12 @@ import logging
 import os
 import signal
 # import socket
+import threading
 import time
 
+from flask import Flask
 from iottly_sdk import IottlySDK
+
 from exceptions import *
 from log_handler import LogHandler
 from program import Program
@@ -427,6 +430,21 @@ class Thermostat():
 def main():
     thermostat = Thermostat()
 
+    app = Flask(__name__)
+
+    app.logger = logger
+
+    @app.route(
+        '/project/<projectID>/device/<deviceID>/command',
+        methods=["POST"]
+    )
+    def send_to_sdk(projectID, deviceID):
+        data = flask.request.json
+        logger.info("flask data: {}".format(data))
+        thermostat.iottly_sdk._process_msg_from_agent(data)
+
+    flask_app = threading.Thread(target=app.run, name='thermostat-local')
+
     # signal handling
     def signal_handler(sig_number, sig_handler):
         off_signals = {
@@ -445,6 +463,8 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
 
     try:
+        # start the flask server for local APIs
+        flask_app.start()
         asyncio.run(thermostat.loop())
     except Exception as e:
         thermostat.relay.clean()
