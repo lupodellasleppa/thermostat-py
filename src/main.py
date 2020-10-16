@@ -224,6 +224,11 @@ class Thermostat():
             cmd_type="send_stuff",
             callback=self._send_stuff
         )
+        self.iottly_sdk.subscribe(
+            cmd_type="to_webhook",
+            callback=self._to_webhook
+        )
+        self.stats = {}
 
     def _load_settings(self):
         settings = self.settings_handler.load_settings()
@@ -273,6 +278,10 @@ class Thermostat():
     def _send_stuff(self, cmdpars):
         logger.info("Received from iottly: {}".format(cmdpars))
         self.send_stuff_counter = int(cmdpars["send_every"])
+
+    def _to_webhook(self, cmdpars):
+        logger.info("I just received a message that needs to go to the webhook!: {}".format(cmdpars))
+        self.stats = cmdpars
 
     async def loop(self):
         last_relay_state = self.relay.stats
@@ -461,6 +470,12 @@ def main():
             return ("", 200)
         except:
             return
+
+    @app.route('/webhook/user')
+    def return_stats():
+        stats = thermostat.stats
+        return_code = 200 if stats else 404
+        return (thermostat.stats, return_code)
 
     def run_thermostat():
         asyncio.run(thermostat.loop())
