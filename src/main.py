@@ -272,8 +272,7 @@ class Thermostat():
 
     def _send_stuff(self, cmdpars):
         logger.info("Received from iottly: {}".format(cmdpars))
-        if cmdpars["deviceID"] == self.device_id:
-            self.send_stuff_counter = int(cmdpars["send_every"])
+        self.send_stuff_counter = int(cmdpars["send_every"])
 
     async def loop(self):
         last_relay_state = self.relay.stats
@@ -450,7 +449,8 @@ def main():
     )
     def send_to_sdk(projectID, deviceID):
         cmd_type, values = flask.request.json.values()
-        data = {cmd_type: values}
+        values = {k.split(".")[1]: v for k, v in values.items()}
+        data = {"data": {cmd_type: values}}
         # data["data"] = flask.request.json
         data = json.dumps(data)
         logger.info("flask data: {}".format(data))
