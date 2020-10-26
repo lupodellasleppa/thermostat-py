@@ -219,6 +219,7 @@ class Thermostat():
         self._init_logger()
         self._init_modules()
         self.send_stuff_counter = False
+        self.commands_arrived = True
         self.time_since_start = 0
         self.new_settings = {}
         self.updated_settings = {}
@@ -289,6 +290,7 @@ class Thermostat():
         self.stats = cmdpars
 
     def _thermostat_commands(self, cmdpars):
+        self.commands_arrived = True
         logger.info("Thermostat command: {}".format(cmdpars))
         if cmdpars["command"] == "stats":
             pass
@@ -301,6 +303,10 @@ class Thermostat():
                 mode: not self.updated_settings[mode]
             }
         logger.info(self.new_settings)
+
+    def _send_stuff(self, cmdpars):
+        logger.info("Received from iottly: {}".format(cmdpars))
+        self.send_stuff_counter = int(cmdpars["send_every"])
 
 
     async def loop(self):
@@ -322,7 +328,10 @@ class Thermostat():
             self.updated_settings = self._load_settings()
             # send stuff to iottly
             if self.send_stuff_counter:
-                if not cycle_count % self.send_stuff_counter:
+                if (
+                    not cycle_count % self.send_stuff_counter or
+                    self.commands_arrived
+                ):
                     self.iottly_sdk.call_agent('send_message', {"msg":
             {
                 "manual": self.updated_settings["manual"],
@@ -335,6 +344,7 @@ class Thermostat():
             }
                     })
                 cycle_count += 1
+                self.commands_arrived = False
             else:
                 cycle_count = 0
             # log if day_changed
