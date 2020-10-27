@@ -20,6 +20,7 @@ from program import Program
 from relay import Relay
 from settings_handler import SettingsHandler
 from thermometer import ThermometerLocal, ThermometerDirect
+from thermostat_pyrebase import PyrebaseInstance
 import util
 
 
@@ -281,6 +282,12 @@ class Thermostat():
             self.settings["intervals"]
         )
         self.iottly_sdk = _init_iottly_sdk()
+        self.db = PyrebaseInstance(
+            apiKey=os.environ["FIREBASE_API_KEY"],
+            authDomain="thermostat-12d81.firebaseapp.com",
+            databaseURL="https://thermostat-12d81.firebaseio.com",
+            storageBucket="thermostat-12d81.appspot.com"
+        ).db
 
     def _send_stuff(self, cmdpars):
         logger.info("Received from iottly: {}".format(cmdpars))
@@ -311,6 +318,7 @@ class Thermostat():
 
     async def loop(self):
         last_relay_state = self.relay.stats
+        last_msg = None
         last_mode = self.settings["mode"]
         stop = False
         cycle_count = 0
@@ -329,11 +337,11 @@ class Thermostat():
             # send stuff to iottly
             if self.send_stuff_counter:
                 if (
-                    not cycle_count % self.send_stuff_counter or
-                    self.commands_arrived
+                    (not cycle_count % self.send_stuff_counter)
+                    or
+                    (not self.send_stuff_counter and self.commands_arrived)
                 ):
-                    self.iottly_sdk.call_agent('send_message', {"msg":
-            {
+                    payload = {
                 "manual": self.updated_settings["manual"],
                 "auto": self.updated_settings["auto"],
                 "program": self.updated_settings["program"],
@@ -341,8 +349,13 @@ class Thermostat():
                 "relay": self.updated_settings["relay_configs"]["state"],
                 "room_temperature": self.updated_settings["room_temperature"],
                 "time_elapsed": self.updated_settings["log"]["time_elapsed"],
-            }
-                    })
+                    }
+                    if last_msg:
+                        logger.info("last_msg: {}".format(last_msg))
+                        key = last_msg["name"]
+                        self.db.child("webhook").child(key).remove()
+                    last_msg = self.db.child("webhook").push(payload)
+                    # self.iottly_sdk.call_agent('send_message', payload)
                 cycle_count += 1
                 self.commands_arrived = False
             else:
