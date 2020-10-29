@@ -8,6 +8,7 @@ import time
 
 from exceptions import *
 
+
 logger_name = 'thermostat'
 logger = logging.getLogger(logger_name)
 
@@ -21,6 +22,7 @@ days_of_week = {
     6: 'sunday'
 }
 
+
 def get_loglevel(level):
 
     loglevel = {
@@ -30,7 +32,9 @@ def get_loglevel(level):
         'error': logging.ERROR,
         'critical': logging.CRITICAL
     }
+
     return loglevel[level.lower()]
+
 
 def get_now():
     '''
@@ -51,6 +55,7 @@ def get_now():
         seconds=current_second
     ).total_seconds()
     current_date = str(current_time.date())
+
     return {
         'datetime': current_time,
         'day': current_day,
@@ -62,9 +67,10 @@ def get_now():
         'total_seconds': current_total_seconds,
         'formatted_time': str(datetime.timedelta(
             seconds=round(current_total_seconds)
-        )), # TODO: use function format_seconds() below
+        )),
         'formatted_date': current_date
     }
+
 
 def write_log(log_path, data):
     if not os.path.isfile(log_path) or not os.stat(log_path).st_size:
@@ -78,7 +84,9 @@ def write_log(log_path, data):
         with open(log_path, 'w') as f:
             f.write(json.dumps(log_file, indent=2))
             f.write('\n')
+
     return 'Wrote log to file.'
+
 
 def format_seconds(seconds):
     '''
@@ -89,6 +97,7 @@ def format_seconds(seconds):
     return str(datetime.timedelta(
         seconds=round(seconds)
     ))
+
 
 def five_o(time_to_wait, minutes=0, seconds=0, microseconds=0):
     '''
@@ -104,7 +113,9 @@ def five_o(time_to_wait, minutes=0, seconds=0, microseconds=0):
     if microseconds:
         # compensate microseconds
         time_to_wait -= float(f'0.{microseconds:0>6}')
+
     return time_to_wait
+
 
 def is_number(presumed_number):
     '''
@@ -112,16 +123,22 @@ def is_number(presumed_number):
     '''
     is_int = isinstance(presumed_number, int)
     is_float = isinstance(presumed_number, float)
+
     return any(
         [is_int, is_float]
     )
 
+
 def string_to_bool(arg, parser):
     if arg is not None and isinstance(arg, str):
         if arg.lower() in {'true', 't', 'yes', 'y', 'on', '1'}:
+
             return True
+
         elif arg.lower() in {'false', 'f', 'no', 'n', 'off', '0'}:
+
             return False
+
         else:
             raise parser.error(
                 'Please enter a boolean-like value for this argument.'
@@ -129,31 +146,41 @@ def string_to_bool(arg, parser):
     else:
         pass
 
+
 def check_same_day(last, current):
-    """Returns True if day changed since last read."""
+    """
+    Returns True if day changed since last read.
+    """
     if last != current:
         if current > last:
             return True
         else:
             raise DateCompareException
+
     return False
+
 
 def stop_expired(current, stop, stop_time) -> bool:
     """
     Returns True is stop time is expired
     """
     time_since_stop = current["datetime"] - stop
+
     return time_since_stop.total_seconds() > stop_time
+
 
 def increment_time_elapsed(settings, n):
     time_elapsed_restore = datetime.datetime.strptime(
-        settings["log"].get('time_elapsed', '0:00:00'), '%H:%M:%S'
+        settings.get('time_elapsed', '0:00:00'), '%H:%M:%S'
     )
+
     time_elapsed = datetime.timedelta(
         hours=time_elapsed_restore.hour,
         minutes=time_elapsed_restore.minute,
         seconds=time_elapsed_restore.second
     ).total_seconds()
+
     time_elapsed += n
     logger.info("time_elapsed PIÙ N: {}".format(time_elapsed))
+
     return format_seconds(time_elapsed)
