@@ -184,3 +184,17 @@ def increment_time_elapsed(settings, n):
     logger.info("time_elapsed PIÙ N: {}".format(time_elapsed))
 
     return format_seconds(time_elapsed)
+
+
+def compute_differences(settings, settings_prev):
+    """
+    Given two settings dictionary from different cycles,
+    computes difference in every field and returns
+    a new dictionary having identical fields but boolean value.
+
+    True if there was a difference, False else
+    """
+    return {
+        k: True if v != settings_prev.get(k) else False
+        for k, v in settings.items()
+    }

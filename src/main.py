@@ -250,9 +250,12 @@ class Thermostat():
             "paths": settings["paths"],
             "intervals": settings["intervals"],
             "relay_configs": settings["relay"],
+            "relay_state": settings["relay"]["state"],
             "room_temperature": settings["temperatures"]["room"],
             "thermometer_configs": settings["configs"],
-            "log": settings["log"]
+            "loglevel": settings["log"]["loglevel"],
+            "last_day_on": settings["log"]["last_day_on"],
+            "time_elapsed": settings["log"]["time_elapsed"],
         }
 
     def _init_logger(self):
@@ -265,7 +268,7 @@ class Thermostat():
         logger = logging.getLogger(logger_name)
         logger.setLevel(
             util.get_loglevel(
-                self.settings["log"]["loglevel"]
+                self.settings["loglevel"]
             )
         )
 
@@ -317,14 +320,15 @@ class Thermostat():
 
 
     async def loop(self):
-        last_relay_state = self.relay.stats
-        last_msg = None
-        last_mode = self.settings["mode"]
-        stop = False
         cycle_count = 0
+        last_msg = None
+        mode_keys = {
+            "manual", "auto", "program", "desired_temp"
+        }
+        stop = False
         stop_time = self.settings["intervals"]["stop_time"]
-        time_elapsed = 0
         time_after_sleep = 0
+        time_elapsed = 0
         # start loop
         logger.info("Starting loop. Settings:\n{}".format(self.settings))
         while not self.exit.is_set():
@@ -333,25 +337,38 @@ class Thermostat():
             start = time.monotonic()
             # update current time and values from settings_file
             current = util.get_now()
+            last_settings = self.updated_settings
             self.updated_settings = self._load_settings()
+            diff_settings = util.compute_differences(
+                self.updated_settings, last_settings
+            )
             # send stuff to iottly
             if self.send_stuff_cycles:
-                if (  # sends periodically (only when heater is ON,
+                if (  # sends periodically (only when heater is ON and
                     ( #  every self.send_stuff_cycles)
                         not cycle_count % self.send_stuff_cycles and
-                        not self.updated_settings.relay
+                        self.updated_settings["relay_state"]
                     )
                     or # send only as command feedback
                     (not self.send_stuff_cycles and self.commands_arrived)
+                    or # settings changed
+                    any(diff_settings.values())
                 ):
                     payload = {
-                "manual": self.updated_settings["manual"],
-                "auto": self.updated_settings["auto"],
-                "program": self.updated_settings["program"],
-                "desired_temp": self.updated_settings["desired_temp"],
-                "relay": self.updated_settings["relay_configs"]["state"],
-                "room_temperature": self.updated_settings["room_temperature"],
-                "time_elapsed": self.updated_settings["log"]["time_elapsed"],
+                        "manual":
+                            self.updated_settings["manual"],
+                        "auto":
+                            self.updated_settings["auto"],
+                        "program":
+                            self.updated_settings["program"],
+                        "desired_temp":
+                            self.updated_settings["desired_temp"],
+                        "relay":
+                            self.updated_settings["relay_state"],
+                        "room_temperature":
+                            self.updated_settings["room_temperature"],
+                        "time_elapsed":
+                            self.updated_settings["time_elapsed"],
                     }
                     # delete message on firebase if exists
                     if last_msg:
@@ -366,13 +383,13 @@ class Thermostat():
                 cycle_count = 0
             # log if day_changed
             day_changed = util.check_same_day(
-                self.updated_settings["log"]["last_day_on"],
+                self.updated_settings["last_day_on"],
                 current["formatted_date"]
             )
             if day_changed:
                 self.custom_logger.save_daily_entry(
-                    self.updated_settings["log"]["time_elapsed"],
-                    self.updated_settings["log"]["last_day_on"]
+                    self.updated_settings["time_elapsed"],
+                    self.updated_settings["last_day_on"]
                 )
             # create async tasks
             logger.debug("Asking temperature to thermometer...")
@@ -388,22 +405,12 @@ class Thermostat():
                     time.sleep(intervals["settings"])
                     continue
             # stop for given time in settings_file when relay_state changes
-            if self.updated_settings["relay_configs"]["state"] != last_relay_state:
+            if diff_settings["relay_state"]:
                 stop = current["datetime"]
                 logger.info("Stop at {}.".format(stop))
-            last_relay_state = self.updated_settings["relay_configs"]["state"]
             # but cancel stop if settings changes
-            for k, v in last_mode.items():
-                if self.updated_settings[k] != v:
-                    stop = False
-                    break
-            # update last_mode
-            last_mode = {
-                "manual": self.updated_settings["manual"],
-                "auto": self.updated_settings["auto"],
-                "program": self.updated_settings["program"],
-                "desired_temp": self.updated_settings["desired_temp"]
-            }
+            if any([diff_settings[k] for k in mode_keys]):
+                stop = False
             # check if stop is expired
             if stop:
                 stop_expired = util.stop_expired(current, stop, stop_time)
@@ -419,7 +426,7 @@ class Thermostat():
             # retrieve new_settings from UI and loop and write them to file
             # new_settings = {}
             logger.debug("Just before await of temp")
-            try:
+            try: # TODO: multiple sensors logic
                 received_temperature = await request_temperatures
                 logger.info(
                     "Received temperature: {}".format(received_temperature)
@@ -428,7 +435,7 @@ class Thermostat():
                     received_temperature !=
                     self.updated_settings["room_temperature"]
                 ):
-                    self.settings_handler.handler(
+                    self.new_settings.update(
                         {"temperatures": {"room": received_temperature}}
                     )
             except ThermometerTimeout as e:
