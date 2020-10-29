@@ -219,7 +219,7 @@ class Thermostat():
         self.project_id, self.device_id = _retrieve_iottly_info(iottly_path)
         self._init_logger()
         self._init_modules()
-        self.send_stuff_counter = False
+        self.send_stuff_cycles = False
         self.commands_arrived = True
         self.time_since_start = 0
         self.new_settings = {}
@@ -291,7 +291,7 @@ class Thermostat():
 
     def _send_stuff(self, cmdpars):
         logger.info("Received from iottly: {}".format(cmdpars))
-        self.send_stuff_counter = int(cmdpars["send_every"])
+        self.send_stuff_cycles = int(cmdpars["send_every"])
 
     def _to_webhook(self, cmdpars):
         self.stats = cmdpars
@@ -313,7 +313,7 @@ class Thermostat():
 
     def _send_stuff(self, cmdpars):
         logger.info("Received from iottly: {}".format(cmdpars))
-        self.send_stuff_counter = int(cmdpars["send_every"])
+        self.send_stuff_cycles = int(cmdpars["send_every"])
 
 
     async def loop(self):
@@ -335,11 +335,14 @@ class Thermostat():
             current = util.get_now()
             self.updated_settings = self._load_settings()
             # send stuff to iottly
-            if self.send_stuff_counter:
-                if (
-                    (not cycle_count % self.send_stuff_counter)
-                    or
-                    (not self.send_stuff_counter and self.commands_arrived)
+            if self.send_stuff_cycles:
+                if (  # sends periodically (only when heater is ON,
+                    ( #  every self.send_stuff_cycles)
+                        not cycle_count % self.send_stuff_cycles and
+                        not self.updated_settings.relay
+                    )
+                    or # send only as command feedback
+                    (not self.send_stuff_cycles and self.commands_arrived)
                 ):
                     payload = {
                 "manual": self.updated_settings["manual"],
@@ -350,8 +353,9 @@ class Thermostat():
                 "room_temperature": self.updated_settings["room_temperature"],
                 "time_elapsed": self.updated_settings["log"]["time_elapsed"],
                     }
+                    # delete message on firebase if exists
                     if last_msg:
-                        logger.info("last_msg: {}".format(last_msg))
+                        logger.debug("last_msg: {}".format(last_msg))
                         key = last_msg["name"]
                         self.db.child("webhook").child(key).remove()
                     last_msg = self.db.child("webhook").push(payload)
