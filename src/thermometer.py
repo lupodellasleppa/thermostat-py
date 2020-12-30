@@ -42,7 +42,7 @@ class ThermometerLocal():
             request = self.thermometer.recv(4096)
             logging.info("Requesting temperatures...")
         except socket.timeout:
-            raise ThermometerTimeout
+            raise ThermometerLocalTimeout
         temperature = await self._parse_temperatures(
             request.decode(), 'celsius'
         )
@@ -76,5 +76,11 @@ class ThermometerDirect():
                 thermometer = os.path.join(devices_dir, device)
         data = os.path.join(thermometer, 'w1_slave')
         with open(data) as f:
-            temperature = int(f.readlines()[-1].split('=')[-1]) / 1000
+            try:
+                temperature = int(
+                    f.readlines()[-1]
+                    .split('=')[-1]
+                ) / 1000
+            except IndexError as e:
+                raise ThermometerDirectException(e)
         return temperature

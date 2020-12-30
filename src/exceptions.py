@@ -7,7 +7,10 @@ class DateCompareException(Exception):
 class InvalidSettingsException(Exception):
     pass
 
-class ThermometerTimeout(socket.timeout):
+class ThermometerDirectException(socket.timeout):
+    pass
+
+class ThermometerLocalTimeout(socket.timeout):
     pass
 
 class UnknownException(socket.timeout):

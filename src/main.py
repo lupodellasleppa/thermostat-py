@@ -401,7 +401,7 @@ class Thermostat():
                     temperature = await temperature
                 # if no value for room_temperature and read from thermometer
                 # fails, retry endlessly without taking any other action
-                except ThermometerTimeout:
+                except (ThermometerLocalTimeout, ThermometerDirectException):
                     time.sleep(intervals["settings"])
                     continue
             # stop for given time in settings_file when relay_state changes
@@ -438,11 +438,13 @@ class Thermostat():
                     self.new_settings.update(
                         {"temperatures": {"room": received_temperature}}
                     )
-            except ThermometerTimeout as e:
+            except ThermometerLocalTimeout:
                 logger.warning(
                     "Could not retrieve temperatures from themometer."
                 )
                 pass
+            except ThermometerDirectException as e:
+                self.iottly_sdk.send({"error": str(e)})
             logger.debug("Just before await of action")
             action = await action_task
             logger.info("Relay state: {}".format(action))
