@@ -374,7 +374,10 @@ class Thermostat():
                     if last_msg:
                         logger.debug("last_msg: {}".format(last_msg))
                         key = last_msg["name"]
-                        self.db.child("webhook").child(key).remove()
+                        try:
+                            self.db.child("webhook").child(key).remove()
+                        except Exception as e:
+                            iottly_sdk.send({"error": str(e)})
                     last_msg = self.db.child("webhook").push(payload)
                     # self.iottly_sdk.call_agent('send_message', payload)
                 cycle_count += 1
