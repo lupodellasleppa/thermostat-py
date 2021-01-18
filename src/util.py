@@ -181,7 +181,6 @@ def increment_time_elapsed(settings, n):
     ).total_seconds()
 
     time_elapsed += n
-    logger.info("time_elapsed PIÙ N: {}".format(time_elapsed))
 
     return format_seconds(time_elapsed)
 
