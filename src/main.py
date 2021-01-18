@@ -334,7 +334,7 @@ class Thermostat():
         while not self.exit.is_set():
             # initialize states
             action = False
-            start = time.monotonic()
+            start = time.perf_counter()
             # update current time and values from settings_file
             current = util.get_now()
             last_settings = self.updated_settings
@@ -456,15 +456,15 @@ class Thermostat():
             # otherwise we will sleep for more than X
             time_to_sleep = (
                 self.settings["intervals"]["settings"] -
-                (time.monotonic() - start)
+                (time.perf_counter() - start)
             )
             time.sleep(max(0, time_to_sleep - time_after_sleep))
-            after_sleep = time.monotonic()
+            after_sleep = time.perf_counter()
             time_after_sleep = 0
 
             # update elapsed time with heater on
             if action:
-                self.time_since_start += time.monotonic() - start
+                self.time_since_start += time.perf_counter() - start
             logger.debug("time_since_start: {}".format(self.time_since_start))
             time_elapsed = 0
             time_to_add = int(self.time_since_start)
@@ -498,7 +498,7 @@ class Thermostat():
                 # (even if this is already managed by SettingsHandler)
                 self.settings_handler.handler(self.new_settings)
                 self.new_settings = {}
-            time_after_sleep = time.monotonic() - after_sleep
+            time_after_sleep = time.perf_counter() - after_sleep
         # raise UnknownException('Exited main loop.')
         self.relay.off()
         self.relay.clean()
