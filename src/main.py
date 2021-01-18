@@ -321,7 +321,6 @@ class Thermostat():
 
     async def loop(self):
         cycle_count = 0
-        last_msg = None
         mode_keys = {
             "manual", "auto", "program", "desired_temp"
         }
@@ -370,17 +369,9 @@ class Thermostat():
                         "time_elapsed":
                             self.updated_settings["time_elapsed"],
                     }
-                    # delete message on firebase if exists
-                    if last_msg:
-                        logger.debug("last_msg: {}".format(last_msg))
-                        key = last_msg["name"]
-                        try:
-                            self.db.child("webhook").child(key).remove()
-                        except Exception as e:
-                            iottly_sdk.send({"error": str(e)})
-                    last_msg = self.db.child(
-                        "webhook/{}".format(self.device_id)
-                    ).push(payload)
+                    # send to firebase RTDB
+                    # TODO: add try/except
+                    self.db.child("webhook").child(self.device_id).set(payload)
                     # self.iottly_sdk.call_agent('send_message', payload)
                 cycle_count += 1
                 self.commands_arrived = False
