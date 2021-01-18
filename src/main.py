@@ -330,7 +330,7 @@ class Thermostat():
         time_after_sleep = 0
         time_elapsed = 0
         # start loop
-        logger.info("Starting loop. Settings:\n{}".format(self.settings))
+        logger.debug("Starting loop. Settings:\n{}".format(self.settings))
         while not self.exit.is_set():
             # initialize states
             action = False
@@ -407,7 +407,7 @@ class Thermostat():
             # stop for given time in settings_file when relay_state changes
             if diff_settings["relay_state"]:
                 stop = current["datetime"]
-                logger.info("Stop at {}.".format(stop))
+                logger.debug("Stop at {}.".format(stop))
             # but cancel stop if settings changes
             if any([diff_settings[k] for k in mode_keys]):
                 stop = False
@@ -465,7 +465,7 @@ class Thermostat():
             # update elapsed time with heater on
             if action:
                 self.time_since_start += time.monotonic() - start
-            logger.info("time_since_start: {}".format(self.time_since_start))
+            logger.debug("time_since_start: {}".format(self.time_since_start))
             time_elapsed = 0
             time_to_add = int(self.time_since_start)
             self.time_since_start -= time_to_add
@@ -494,7 +494,6 @@ class Thermostat():
                     }
                 })
             if self.new_settings:
-                logger.info("\n\n\nNEW SETTINGS\n\n\n")
                 # write only if there's a difference
                 # (even if this is already managed by SettingsHandler)
                 self.settings_handler.handler(self.new_settings)
