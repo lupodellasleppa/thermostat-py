@@ -354,24 +354,16 @@ class Thermostat():
                     any(diff_settings.values())
                 ):
                     payload = {
-                        "manual":
-                            self.updated_settings["manual"],
-                        "auto":
-                            self.updated_settings["auto"],
-                        "program":
-                            self.updated_settings["program"],
-                        "desired_temp":
-                            self.updated_settings["desired_temp"],
-                        "relay":
-                            self.updated_settings["relay_state"],
-                        "room_temperature":
-                            self.updated_settings["room_temperature"],
-                        "time_elapsed":
-                            self.updated_settings["time_elapsed"],
+                        k: v for k, v in self.updated_settings.items()
+                        if k in diff_settings.keys()
                     }
                     # send to firebase RTDB
                     # TODO: add try/except
-                    self.db.child("webhook").child(self.device_id).set(payload)
+                    (
+                        self.db.child("webhook")
+                            .child(self.device_id)
+                            .update(payload)
+                    )
                     # self.iottly_sdk.call_agent('send_message', payload)
                 cycle_count += 1
                 self.commands_arrived = False
