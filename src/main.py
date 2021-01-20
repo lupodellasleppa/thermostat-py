@@ -323,9 +323,12 @@ class Thermostat():
         program_weekday = cmdpars["program_weekday"]
         program_hour = cmdpars["program_hour"]
         value = cmdpars["value"]
-        self.program.edit_program(
-            program_number, program_weekday, program_hour, value
-        )
+        try:
+            self.program.edit_program(
+                program_number, program_weekday, program_hour, value
+            )
+        except Exception as e:
+            logger.exception(e)
 
     def update_program_target_temperature(self, prev, current, reload):
         if reload:
