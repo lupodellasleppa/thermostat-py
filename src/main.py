@@ -314,10 +314,6 @@ class Thermostat():
             }
         logger.info(self.new_settings)
 
-    def _send_stuff(self, cmdpars):
-        logger.info("Received from iottly: {}".format(cmdpars))
-        self.send_stuff_cycles = int(cmdpars["send_every"])
-
 
     async def loop(self):
         cycle_count = 0
@@ -336,7 +332,9 @@ class Thermostat():
             start = time.perf_counter()
             # update current time and values from settings_file
             current = util.get_now()
-            last_settings = self.updated_settings
+            last_settings = {
+                k: v for k, v in self.updated_settings.items()
+            }
             self.updated_settings = self._load_settings()
             diff_settings = util.compute_differences(
                 self.updated_settings, last_settings
