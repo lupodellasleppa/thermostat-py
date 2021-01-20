@@ -135,10 +135,9 @@ def _load_settings(settings_handler):
 async def _handle_on_and_off(
         current,
         relay,
-        paths,
         manual,
         auto,
-        program,
+        program_target_temperature,
         desired_temp,
         room_temperature
     ):
@@ -155,7 +154,11 @@ async def _handle_on_and_off(
     elif auto:
         logger.debug("auto of _handle_on_and_off")
         return _auto_mode(
-            current, desired_temp, paths, program, relay, room_temperature
+            current,
+            desired_temp,
+            program_target_temperature,
+            relay,
+            room_temperature
         )
     # BOTH MANUAL AND AUTO ARE OFF
     else:
@@ -183,21 +186,22 @@ def _manual_mode(desired_temperature, room_temperature, relay):
 def _auto_mode(
     current,
     desired_temp,
-    paths,
-    program,
+    program_target_temperature,
     relay,
     room_temperature
 ):
-    # load program
-    program = _init_program(program, paths)
-    # load program setting at current day and time
-    program_now = program.program[current["weekday"]][str(current["hours"])]
     ### TURN ON CASE
     if (# Value in program is bool
-        (program_now is True and room_temperature < desired_temp)
+        (
+            program_target_temperature is True and
+            room_temperature < desired_temp
+        )
         or
         # value in program is float
-        (util.is_number(program_now) and room_temperature < program_now)
+        (
+            util.is_number(program_target_temperature) and
+            room_temperature < program_target_temperature
+        )
     ):
         if not relay.stats:
             return relay.on()
@@ -223,19 +227,15 @@ class Thermostat():
         self.new_settings = {}
         self.updated_settings = {}
         self.iottly_sdk.subscribe(
-            cmd_type="to_webhook",
-            callback=self._to_webhook
-        )
-        self.iottly_sdk.subscribe(
             cmd_type="thermostat",
             callback=self._thermostat_commands
         )
-        self.stats = {}
         self.send_to_app_keys = {
             "auto",
             "desired_temp",
             "manual",
             "program",
+            "program_target_temperature",
             "relay_state",
             "room_temperature",
             "time_elapsed"
@@ -243,7 +243,7 @@ class Thermostat():
 
     def _load_settings(self):
         settings = self.settings_handler.load_settings()
-        return {
+        self.updated_settings.update({
             "log": settings["log"],
             "mode": settings["mode"],
             "manual": settings["mode"]["manual"],
@@ -259,7 +259,7 @@ class Thermostat():
             "loglevel": settings["log"]["loglevel"],
             "last_day_on": settings["log"]["last_day_on"],
             "time_elapsed": settings["log"]["time_elapsed"],
-        }
+        })
 
     def _init_logger(self):
         logger_name = 'thermostat'
@@ -295,11 +295,7 @@ class Thermostat():
             storageBucket="thermostat-12d81.appspot.com"
         ).db
 
-    def _to_webhook(self, cmdpars):
-        self.stats = cmdpars
-
     def _thermostat_commands(self, cmdpars):
-        self.commands_arrived = True
         logger.info("Thermostat command: {}".format(cmdpars))
         if cmdpars["command"] == "stats":
             pass
@@ -313,12 +309,27 @@ class Thermostat():
             }
         logger.info(self.new_settings)
 
+    def update_program_target_temperature(self, prev, current, reload):
+        settings = (
+            self.settings if not self.updated_settings
+            else self.updated_settings
+        )
+        if reload:
+            # load program
+            program = _init_program(
+                settings["program"], settings["paths"]
+            )
+        weekday = current["weekday"]
+        hour = current["hours"]
+        # load program setting at current day and time
+        program_now = program.program[weekday][str(hour)] if prev else None
+        # return only if there's a difference
+        return program_now
+
     async def loop(self):
-        mode_keys = {
-            "manual", "auto", "program", "desired_temp"
-        }
         stop = False
         stop_time = self.settings["intervals"]["stop_time"]
+        program_now = None
         time_after_sleep = 0
         time_elapsed = 0
         # start loop
@@ -329,10 +340,23 @@ class Thermostat():
             start = time.perf_counter()
             # update current time and values from settings_file
             current = util.get_now()
+            prev_program_target_temperature = program_now
+            program_now = self.update_program_target_temperature(
+                prev_program_target_temperature,
+                current,
+                True
+            )
+            # adds current target temperature from programs
+            #  because it's not an information I want to store
+            #  in the settings file
+            self.updated_settings.update(
+                {"program_target_temperature": program_now}
+            )
+            # then computes differences so sends only what has changed
             last_settings = {
                 k: v for k, v in self.updated_settings.items()
             }
-            self.updated_settings = self._load_settings()
+            self._load_settings()
             diff_settings = util.compute_differences(
                 self.updated_settings, last_settings
             )
@@ -378,6 +402,9 @@ class Thermostat():
                 stop = current["datetime"]
                 logger.debug("Stop at {}.".format(stop))
             # but cancel stop if settings changes
+            mode_keys = {
+                "manual", "auto", "program", "desired_temp"
+            }
             if any([diff_settings[k] for k in mode_keys]):
                 stop = False
             # check if stop is expired
@@ -393,7 +420,6 @@ class Thermostat():
                     }
                 ))
             # retrieve new_settings from UI and loop and write them to file
-            # new_settings = {}
             logger.debug("Just before await of temp")
             try: # TODO: multiple sensors logic
                 received_temperature = await request_temperatures
@@ -407,11 +433,11 @@ class Thermostat():
                     self.new_settings.update(
                         {"temperatures": {"room": received_temperature}}
                     )
-            except ThermometerLocalTimeout:
+            except ThermometerLocalTimeout as e:
                 logger.warning(
                     "Could not retrieve temperatures from themometer."
                 )
-                pass
+                self.iottly_sdk.send({"error": str(e)})
             except ThermometerDirectException as e:
                 self.iottly_sdk.send({"error": str(e)})
             logger.debug("Just before await of action")
