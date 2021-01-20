@@ -2,10 +2,14 @@
 
 import argparse
 import json
+import logging
 import os
 
 import util
 
+
+logger_name = 'thermostat'
+logger = logging.getLogger(logger_name)
 
 class Program(object):
 
@@ -139,6 +143,7 @@ class Program(object):
 
         with open(self.program_path, 'w') as f:
             f.write(json.dumps(program))
+            f.write("\n")
 
 
 def main():
