@@ -219,15 +219,9 @@ class Thermostat():
         self.project_id, self.device_id = _retrieve_iottly_info(iottly_path)
         self._init_logger()
         self._init_modules()
-        self.send_stuff_cycles = False
-        self.commands_arrived = True
         self.time_since_start = 0
         self.new_settings = {}
         self.updated_settings = {}
-        self.iottly_sdk.subscribe(
-            cmd_type="send_stuff",
-            callback=self._send_stuff
-        )
         self.iottly_sdk.subscribe(
             cmd_type="to_webhook",
             callback=self._to_webhook
@@ -301,10 +295,6 @@ class Thermostat():
             storageBucket="thermostat-12d81.appspot.com"
         ).db
 
-    def _send_stuff(self, cmdpars):
-        logger.info("Received from iottly: {}".format(cmdpars))
-        self.send_stuff_cycles = int(cmdpars["send_every"])
-
     def _to_webhook(self, cmdpars):
         self.stats = cmdpars
 
@@ -323,9 +313,7 @@ class Thermostat():
             }
         logger.info(self.new_settings)
 
-
     async def loop(self):
-        cycle_count = 0
         mode_keys = {
             "manual", "auto", "program", "desired_temp"
         }
@@ -349,33 +337,19 @@ class Thermostat():
                 self.updated_settings, last_settings
             )
             # send stuff to iottly
-            if self.send_stuff_cycles:
-                if (  # sends periodically (only when heater is ON and
-                    ( #  every self.send_stuff_cycles)
-                        not cycle_count % self.send_stuff_cycles and
-                        self.updated_settings["relay_state"]
-                    )
-                    or # send only as command feedback
-                    (not self.send_stuff_cycles and self.commands_arrived)
-                    or # settings changed
-                    any(diff_settings.values())
-                ):
-                    payload = {
-                        k: v for k, v in self.updated_settings.items()
-                        if k in diff_settings.keys() & self.send_to_app_keys
-                    }
-                    # send to firebase RTDB
-                    # TODO: add try/except
-                    (
-                        self.db.child("webhook")
-                            .child(self.device_id)
-                            .update(payload)
-                    )
-                    # self.iottly_sdk.call_agent('send_message', payload)
-                cycle_count += 1
-                self.commands_arrived = False
-            else:
-                cycle_count = 0
+            if any(diff_settings.values()):
+                payload = {
+                    k: v for k, v in self.updated_settings.items()
+                    if k in diff_settings.keys() & self.send_to_app_keys
+                }
+                # send to firebase RTDB
+                # TODO: add try/except
+                (
+                    self.db.child("webhook")
+                        .child(self.device_id)
+                        .update(payload)
+                )
+                # self.iottly_sdk.call_agent('send_message', payload)
             # log if day_changed
             day_changed = util.check_same_day(
                 self.updated_settings["last_day_on"],
