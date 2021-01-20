@@ -221,6 +221,9 @@ class Thermostat():
         # inited empty then updated for later convenience
         self.settings = {}
         self._load_settings()
+        self.program = _init_program(
+            self.settings["program"], self.settings["paths"]
+        )
         iottly_path = self.settings["paths"]["iottly"]
         self.project_id, self.device_id = _retrieve_iottly_info(iottly_path)
         self._init_logger()
@@ -230,6 +233,10 @@ class Thermostat():
         self.iottly_sdk.subscribe(
             cmd_type="thermostat",
             callback=self._thermostat_commands
+        )
+        self.iottly_sdk.subscribe(
+            cmd_type="program",
+            callback=self._program_handler
         )
         self.send_to_app_keys = {
             "auto",
@@ -310,16 +317,26 @@ class Thermostat():
             }
         logger.info(self.new_settings)
 
+    def _program_handler(self, cmdpars):
+        logger.info("Program command: {}".format(cmdpars))
+        program_number = cmdpars["program_number"]
+        program_weekday = cmdpars["program_weekday"]
+        program_hour = cmdpars["program_hour"]
+        value = cmdpars["value"]
+        self.program.edit_program(
+            program_number, program_weekday, program_hour, value
+        )
+
     def update_program_target_temperature(self, prev, current, reload):
         if reload:
             # load program
-            program = _init_program(
+            self.program = _init_program(
                 self.settings["program"], self.settings["paths"]
             )
         weekday = current["weekday"]
         hour = current["hours"]
         # load program setting at current day and time
-        program_now = program.program[weekday][str(hour)]
+        program_now = self.program.program[weekday][str(hour)]
         # return only if there's a difference
         return program_now
 

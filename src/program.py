@@ -34,7 +34,7 @@ class Program(object):
         except ValueError as e:
             raise e
 
-    def edit_program(self, program_number, day, hour, value):
+    def edit_program(self, program_number, days, hours, value):
         '''
         Writes to program.json to program thermostat
 
@@ -43,10 +43,10 @@ class Program(object):
         '''
 
         # if day or hour not lists make them lists
-        if not isinstance(day, list):
-            day = [day]
-        if not isinstance(hour, list):
-            hour = [hour]
+        if not isinstance(days, list):
+            days = [days]
+        if not isinstance(hours, list):
+            hours = [hours]
 
         # exception messages
         invalid_day_message = (
@@ -63,11 +63,11 @@ class Program(object):
         except ValueError:
             raise ValueError("Argument 'program_number' should be an integer.")
         try:
-            day = [d.lower().replace(' ', '') for d in day]
+            days = [d.lower().replace(' ', '') for day in days]
         except AttributeError:
             raise AttributeError(invalid_day_message)
         try:
-            hour = [str(int(h)) for h in hour]
+            hours = [str(int(h)) for hour in hours]
         except ValueError:
             ValueError(invalid_hour_message)
 
@@ -78,13 +78,15 @@ class Program(object):
             raise KeyError('Could not find specified program number.')
 
         # edit the configuration
-        for d in day:
-            d = d.lower().replace(' ', '')
+        for day in days:
+            # d = d.lower().replace(' ', '')
             # check day
             assert d in util.days_of_week.values(), invalid_day_message
-            for h in hour:
+            for hour in hours:
                 # check hour
-                assert h in {str(el) for el in range(24)}, invalid_hour_message
+                assert hour in {
+                    str(el) for el in range(24)
+                }, invalid_hour_message
                 # insert value
                 program[day][hour] = value
 
