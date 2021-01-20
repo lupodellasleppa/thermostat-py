@@ -363,6 +363,15 @@ class Thermostat():
                 current,
                 True
             )
+            last_settings = {
+                k: v for k, v in self.settings.items()
+            }
+            if not "program_target_temperature" in last_settings.keys():
+                # to compute differences at the first run
+                 # when we don't have this key yet
+                last_settings.update(
+                    {"program_target_temperature": None}
+                )
             # adds current target temperature from programs
             #  because it's not an information I want to store
             #  in the settings file
@@ -370,9 +379,6 @@ class Thermostat():
                 {"program_target_temperature": program_now}
             )
             # then computes differences to send only what has changed
-            last_settings = {
-                k: v for k, v in self.settings.items()
-            }
             self._load_settings()
             diff_settings = util.compute_differences(
                 self.settings, last_settings
