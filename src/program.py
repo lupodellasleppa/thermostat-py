@@ -75,10 +75,9 @@ class Program(object):
         except ValueError:
             ValueError(invalid_hour_message)
 
+        programs = self.read_program()
         # check program number exists
-        try:
-            program = self.read_program()[program_number]
-        except KeyError:
+        if program_number not in programs:
             raise KeyError('Could not find specified program number.')
 
         # edit the configuration
@@ -92,9 +91,9 @@ class Program(object):
                     str(el) for el in range(24)
                 }, invalid_hour_message
                 # insert value
-                program[day][hour] = value
+                programs[program_number][day][hour] = value
 
-        self.write_program(program)
+        self.write_program(programs)
 
     def add_program(mode='new', program_number=None):
 
