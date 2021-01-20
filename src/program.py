@@ -142,7 +142,7 @@ class Program(object):
     def write_program(self, program):
 
         with open(self.program_path, 'w') as f:
-            f.write(json.dumps(program))
+            f.write(json.dump(program, f, indent=2))
             f.write("\n")
 
 
