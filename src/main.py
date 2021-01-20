@@ -237,6 +237,15 @@ class Thermostat():
             callback=self._thermostat_commands
         )
         self.stats = {}
+        self.send_to_app_keys = {
+            "auto",
+            "desired_temp",
+            "manual",
+            "program",
+            "relay_state",
+            "room_temperature",
+            "time_elapsed"
+        }
 
     def _load_settings(self):
         settings = self.settings_handler.load_settings()
@@ -353,7 +362,7 @@ class Thermostat():
                 ):
                     payload = {
                         k: v for k, v in self.updated_settings.items()
-                        if k in diff_settings.keys()
+                        if k in diff_settings.keys() & self.send_to_app_keys
                     }
                     # send to firebase RTDB
                     # TODO: add try/except
