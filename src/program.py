@@ -67,11 +67,11 @@ class Program(object):
         except ValueError:
             raise ValueError("Argument 'program_number' should be an integer.")
         try:
-            days = [d.lower().replace(' ', '') for day in days]
+            days = [day.lower().replace(' ', '') for day in days]
         except AttributeError:
             raise AttributeError(invalid_day_message)
         try:
-            hours = [str(int(h)) for hour in hours]
+            hours = [str(int(hour)) for hour in hours]
         except ValueError:
             ValueError(invalid_hour_message)
 
@@ -85,7 +85,7 @@ class Program(object):
         for day in days:
             # d = d.lower().replace(' ', '')
             # check day
-            assert d in util.days_of_week.values(), invalid_day_message
+            assert day in util.days_of_week.values(), invalid_day_message
             for hour in hours:
                 # check hour
                 assert hour in {
