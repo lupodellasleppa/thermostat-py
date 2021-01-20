@@ -218,14 +218,15 @@ class Thermostat():
         self.exit = exit
         args = _create_parser()
         self.settings_handler = SettingsHandler(args.settings_path)
-        self.settings = self._load_settings()
+        # inited empty then updated for later convenience
+        self.settings = {}
+        self._load_settings()
         iottly_path = self.settings["paths"]["iottly"]
         self.project_id, self.device_id = _retrieve_iottly_info(iottly_path)
         self._init_logger()
         self._init_modules()
         self.time_since_start = 0
         self.new_settings = {}
-        self.updated_settings = {}
         self.iottly_sdk.subscribe(
             cmd_type="thermostat",
             callback=self._thermostat_commands
@@ -243,7 +244,7 @@ class Thermostat():
 
     def _load_settings(self):
         settings = self.settings_handler.load_settings()
-        self.updated_settings.update({
+        self.settings.update({
             "log": settings["log"],
             "mode": settings["mode"],
             "manual": settings["mode"]["manual"],
@@ -305,19 +306,15 @@ class Thermostat():
         else:
             mode = cmdpars["command"]
             self.new_settings["mode"] = {
-                mode: not self.updated_settings[mode]
+                mode: not self.settings[mode]
             }
         logger.info(self.new_settings)
 
     def update_program_target_temperature(self, prev, current, reload):
-        settings = (
-            self.settings if not self.updated_settings
-            else self.updated_settings
-        )
         if reload:
             # load program
             program = _init_program(
-                settings["program"], settings["paths"]
+                self.settings["program"], self.settings["paths"]
             )
         weekday = current["weekday"]
         hour = current["hours"]
@@ -349,21 +346,21 @@ class Thermostat():
             # adds current target temperature from programs
             #  because it's not an information I want to store
             #  in the settings file
-            self.updated_settings.update(
+            self.settings.update(
                 {"program_target_temperature": program_now}
             )
             # then computes differences so sends only what has changed
             last_settings = {
-                k: v for k, v in self.updated_settings.items()
+                k: v for k, v in self.settings.items()
             }
             self._load_settings()
             diff_settings = util.compute_differences(
-                self.updated_settings, last_settings
+                self.settings, last_settings
             )
             # send stuff to iottly
             if any(diff_settings.values()):
                 payload = {
-                    k: v for k, v in self.updated_settings.items()
+                    k: v for k, v in self.settings.items()
                     if k in diff_settings.keys() & self.send_to_app_keys
                 }
                 # send to firebase RTDB
@@ -376,20 +373,20 @@ class Thermostat():
                 # self.iottly_sdk.call_agent('send_message', payload)
             # log if day_changed
             day_changed = util.check_same_day(
-                self.updated_settings["last_day_on"],
+                self.settings["last_day_on"],
                 current["formatted_date"]
             )
             if day_changed:
                 self.custom_logger.save_daily_entry(
-                    self.updated_settings["time_elapsed"],
-                    self.updated_settings["last_day_on"]
+                    self.settings["time_elapsed"],
+                    self.settings["last_day_on"]
                 )
             # create async tasks
             logger.debug("Asking temperature to thermometer...")
             request_temperatures = asyncio.create_task(
                 self.thermometer.request_temperatures()
             )
-            if not self.updated_settings["room_temperature"]:
+            if not self.settings["room_temperature"]:
                 try:
                     temperature = await temperature
                 # if no value for room_temperature and read from thermometer
@@ -414,7 +411,7 @@ class Thermostat():
             if not stop or stop_expired:
                 action_task = asyncio.create_task(_handle_on_and_off(
                     current, self.relay, **{
-                        k: v for k, v in self.updated_settings.items()
+                        k: v for k, v in self.settings.items()
                         # unpacks only for params in func signature
                         if k in _handle_on_and_off.__code__.co_varnames
                     }
@@ -428,7 +425,7 @@ class Thermostat():
                 )
                 if (
                     received_temperature !=
-                    self.updated_settings["room_temperature"]
+                    self.settings["room_temperature"]
                 ):
                     self.new_settings.update(
                         {"temperatures": {"room": received_temperature}}
@@ -471,7 +468,7 @@ class Thermostat():
                 self.time_since_start = 0
             if time_to_add:
                 time_elapsed = util.increment_time_elapsed(
-                    self.updated_settings, time_to_add
+                    self.settings, time_to_add
                 )
                 logger.info("time_elapsed: {}".format(time_elapsed))
             # update settings
