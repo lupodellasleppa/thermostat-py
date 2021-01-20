@@ -319,7 +319,7 @@ class Thermostat():
         weekday = current["weekday"]
         hour = current["hours"]
         # load program setting at current day and time
-        program_now = program.program[weekday][str(hour)] if prev else None
+        program_now = program.program[weekday][str(hour)]
         # return only if there's a difference
         return program_now
 
@@ -349,7 +349,7 @@ class Thermostat():
             self.settings.update(
                 {"program_target_temperature": program_now}
             )
-            # then computes differences so sends only what has changed
+            # then computes differences to send only what has changed
             last_settings = {
                 k: v for k, v in self.settings.items()
             }
