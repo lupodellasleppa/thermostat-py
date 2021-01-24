@@ -331,10 +331,11 @@ class Thermostat():
             self.program.edit_program(
                 program_number, program_weekday, program_hour, value
             )
+            self._send_programs()
         except Exception as e:
             logger.exception(e)
 
-    def _send_programs(self, cmdpars):
+    def _send_programs(self, cmdpars={}):
         logger.info("Get Program command: {}".format(cmdpars))
         try:
             (
