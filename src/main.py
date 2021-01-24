@@ -238,6 +238,10 @@ class Thermostat():
             cmd_type="program",
             callback=self._program_handler
         )
+        self.iottly_sdk.subscribe(
+            cmd_type="get_program",
+            callback=self._send_program
+        )
         self.send_to_app_keys = {
             "auto",
             "desired_temp",
@@ -327,6 +331,13 @@ class Thermostat():
             self.program.edit_program(
                 program_number, program_weekday, program_hour, value
             )
+        except Exception as e:
+            logger.exception(e)
+
+    def _send_program(self, cmdpars):
+        logger.info("Get Program command: {}".format(cmdpars))
+        try:
+            self.iottly_sdk.send(self.program.program, "programs")
         except Exception as e:
             logger.exception(e)
 
