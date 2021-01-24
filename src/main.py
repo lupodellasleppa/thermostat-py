@@ -240,7 +240,7 @@ class Thermostat():
         )
         self.iottly_sdk.subscribe(
             cmd_type="get_program",
-            callback=self._send_program
+            callback=self._send_programs
         )
         self.send_to_app_keys = {
             "auto",
@@ -334,16 +334,13 @@ class Thermostat():
         except Exception as e:
             logger.exception(e)
 
-    def _send_program(self, cmdpars):
+    def _send_programs(self, cmdpars):
         logger.info("Get Program command: {}".format(cmdpars))
         try:
             (
                 self.db.child("programs")
                     .child(self.device_id)
-                    .update({
-                        self.program.program_number: self.program.program
-                    })
-                    .update(self.program.program)
+                    .update(self.program.programs)
             )
         except Exception as e:
             logger.exception(e)
