@@ -337,7 +337,11 @@ class Thermostat():
     def _send_program(self, cmdpars):
         logger.info("Get Program command: {}".format(cmdpars))
         try:
-            self.iottly_sdk.send(self.program.program, "programs")
+            (
+                self.db.child("programs")
+                    .child(self.device_id)
+                    .update(self.program.program)
+            )
         except Exception as e:
             logger.exception(e)
 
@@ -394,7 +398,7 @@ class Thermostat():
             diff_settings = util.compute_differences(
                 self.settings, last_settings
             )
-            # send stuff to iottly
+            # send stuff to RTDB
             if any(diff_settings.values()):
                 payload = {
                     k: v for k, v in self.settings.items()
@@ -403,7 +407,7 @@ class Thermostat():
                 # send to firebase RTDB
                 # TODO: add try/except
                 (
-                    self.db.child("webhook")
+                    self.db.child("data")
                         .child(self.device_id)
                         .update(payload)
                 )
