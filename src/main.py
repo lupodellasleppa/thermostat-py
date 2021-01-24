@@ -340,6 +340,9 @@ class Thermostat():
             (
                 self.db.child("programs")
                     .child(self.device_id)
+                    .update({
+                        self.program.program_number: self.program.program
+                    })
                     .update(self.program.program)
             )
         except Exception as e:
