@@ -337,14 +337,19 @@ class Thermostat():
 
     def _send_programs(self, cmdpars={}):
         logger.info("Get Program command: {}".format(cmdpars))
+        self._send_to_firebase(
+            "programs/{}".format(self.device_id),
+            self.program.programs
+        )
+
+    def _send_to_firebase(self, destination, payload):
         try:
             (
-                self.db.child("programs")
-                    .child(self.device_id)
-                    .update(self.program.programs)
+                self.db.child(destination)
+                    .update(payload)
             )
         except Exception as e:
-            logger.exception(e)
+            self.iottly_sdk.send({"error": str(e)})
 
     def update_program_target_temperature(self, prev, current, reload):
         if reload:
@@ -407,10 +412,9 @@ class Thermostat():
                 }
                 # send to firebase RTDB
                 # TODO: add try/except
-                (
-                    self.db.child("data")
-                        .child(self.device_id)
-                        .update(payload)
+                self._send_to_firebase(
+                    "data/{}".format(self.device_id),
+                    payload
                 )
                 # self.iottly_sdk.call_agent('send_message', payload)
             # log if day_changed
