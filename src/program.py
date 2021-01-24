@@ -27,14 +27,14 @@ class Program(object):
             with open(self.program_path, 'w') as w:
                 w.write(json.dumps(program_example))
 
+        self.programs = self.read_program()
         self.program = self.load_program(program_number)
         self.program_number = program_number
 
     def load_program(self, program_number):
 
-        program = self.read_program()
         try:
-            return program[str(program_number)]
+            return self.programs[str(program_number)]
         except ValueError as e:
             raise e
 
@@ -75,9 +75,9 @@ class Program(object):
         except ValueError:
             ValueError(invalid_hour_message)
 
-        programs = self.read_program()
+        self.programs = self.read_program()
         # check program number exists
-        if program_number not in programs:
+        if program_number not in self.programs:
             raise KeyError('Could not find specified program number.')
 
         # edit the configuration
@@ -91,9 +91,9 @@ class Program(object):
                     str(el) for el in range(24)
                 }, invalid_hour_message
                 # insert value
-                programs[program_number][day][hour] = value
+                self.programs[program_number][day][hour] = value
 
-        self.write_program(programs)
+        self.write_program(self.programs)
 
     def add_program(mode='new', program_number=None):
 
