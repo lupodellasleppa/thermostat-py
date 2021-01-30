@@ -434,7 +434,7 @@ class Thermostat():
             )
             if not self.settings["room_temperature"]:
                 try:
-                    temperature = await temperature
+                    temperature = await request_temperatures
                 # if no value for room_temperature and read from thermometer
                 # fails, retry endlessly without taking any other action
                 except (ThermometerLocalTimeout, ThermometerDirectException):
