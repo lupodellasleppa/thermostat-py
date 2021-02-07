@@ -11,8 +11,10 @@ import signal
 import threading
 import time
 
-import flask
+from fastapi import FastAPI, Response, status
+from fastapi.middleware.cors import CORSMiddleware
 from iottly_sdk import IottlySDK
+import uvicorn
 
 from exceptions import *
 from log_handler import LogHandler
@@ -252,6 +254,7 @@ class Thermostat():
             "room_temperature",
             "time_elapsed"
         }
+        self.stats = {}
 
     def _load_settings(self):
         settings = self.settings_handler.load_settings()
@@ -406,7 +409,7 @@ class Thermostat():
             )
             # send stuff to RTDB
             if any(diff_settings.values()):
-                payload = {
+                self.stats = {
                     k: v for k, v in self.settings.items()
                     if k in diff_settings.keys() & self.send_to_app_keys
                 }
@@ -414,7 +417,7 @@ class Thermostat():
                 # TODO: add try/except
                 self._send_to_firebase(
                     "data/{}".format(self.device_id),
-                    payload
+                    self.stats
                 )
                 # self.iottly_sdk.call_agent('send_message', payload)
             # log if day_changed
@@ -546,36 +549,28 @@ def main():
     thermostat_exit = threading.Event()
     thermostat = Thermostat(thermostat_exit)
 
-    app = flask.Flask(__name__)
+    app = FastAPI()
 
-    app.logger = logger
+    origins = [
+        "http://localhost",
+        "http://localhost:8080",
+    ]
 
-    @app.route(
-        '/project/<projectID>/device/<deviceID>/command',
-        methods=["POST"]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
-    def send_to_sdk(projectID, deviceID):
-        cmd_type, values = flask.request.json.values()
-        values = {k.split(".")[1]: v for k, v in values.items()}
-        data = {"data": {cmd_type: values}}
-        # data["data"] = flask.request.json
-        data = json.dumps(data)
-        logger.info("flask data: {}".format(data))
-        try:
-            thermostat.iottly_sdk._process_msg_from_agent(data)
-            resp = flask.Response("", status=200)
-            resp.headers['Access-Control-Allow-Origin'] = '192.168.1.27'
-            return resp
-        except:
-            return
 
-    @app.route('/webhook/user')
-    def return_stats():
-        stats = thermostat.stats
-        return_code = 200 if stats else 404
-        resp = flask.Response(thermostat.stats, status=return_code)
-        resp.headers['Access-Control-Allow-Origin'] = '192.168.1.27'
-        return resp
+
+    # app.logger = logger
+
+    @app.get('/')
+    async def root():
+        device_id = thermostat.device_id
+        return device_id
 
     def run_thermostat():
         asyncio.run(thermostat.loop())
@@ -595,6 +590,7 @@ def main():
         if sig_number in off_signals:
             logger.info("{} received, shutting down...".format(sig_number))
             thermostat_exit.set()
+            server.shutdown()
             exit()
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGSEGV, signal_handler)
@@ -603,11 +599,12 @@ def main():
     signal.signal(signal.SIGHUP, signal_handler)
 
     try:
-        # start the flask server for local APIs
+        # start the FastAPI server for local APIs
         thermostat_loop.start()
-        app.run(host="0.0.0.0") # security first
+        server = uvicorn.run(app, host="0.0.0.0", port=8000)
     except Exception as e:
         thermostat.relay.clean()
+        server.shutdown()
         logger.exception(e)
         raise UnknownException(e)
 
