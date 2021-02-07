@@ -26,6 +26,10 @@ from thermostat_pyrebase import PyrebaseInstance
 import util
 
 
+class Server(uvicorn.Server):
+    def install_signal_handlers(self):
+        pass
+
 # utilities strictly related to this module
 def _create_parser():
     parser = argparse.ArgumentParser()
@@ -541,7 +545,9 @@ class Thermostat():
                 self.new_settings = {}
             time_after_sleep = time.perf_counter() - after_sleep
         # raise UnknownException('Exited main loop.')
+        logger.info("Shutting down relay...")
         self.relay.off()
+        logger.info("Cleaning GPIO...")
         self.relay.clean()
 
 
@@ -578,6 +584,8 @@ def main():
     thermostat_loop = threading.Thread(
         target=run_thermostat, name='thermostat-loop'
     )
+    server_config = uvicorn.Config(app, host="0.0.0.0", port=8000)
+    server = Server(config=server_config)
 
     # signal handling
     def signal_handler(sig_number, sig_handler):
@@ -601,7 +609,7 @@ def main():
     try:
         # start the FastAPI server for local APIs
         thermostat_loop.start()
-        server = uvicorn.run(app, host="0.0.0.0", port=8000)
+        server.run()
     except Exception as e:
         thermostat.relay.clean()
         server.shutdown()
