@@ -11,10 +11,11 @@ import signal
 import threading
 import time
 
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Response, status, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from iottly_sdk import IottlySDK
 import uvicorn
+import websockets
 
 from exceptions import *
 from log_handler import LogHandler
@@ -358,6 +359,14 @@ class Thermostat():
         except Exception as e:
             self.iottly_sdk.send({"error": str(e)})
 
+    async def _send_to_console(self, payload):
+        try:
+            uri = "ws://localhost:8000"
+            async with websockets.connect(uri) as websocket:
+                await websocket.send(payload)
+        except Exception as e:
+            logger.exception(e)
+
     def update_program_target_temperature(self, prev, current, reload):
         if reload:
             # load program
@@ -422,6 +431,10 @@ class Thermostat():
                 self._send_to_firebase(
                     "data/{}".format(self.device_id),
                     self.stats
+                )
+                # display in attached display
+                send_to_console = asyncio.create_task(
+                    self._sendo_to_console(payload)
                 )
                 # self.iottly_sdk.call_agent('send_message', payload)
             # log if day_changed
@@ -493,6 +506,7 @@ class Thermostat():
             logger.debug("Just before await of action")
             action = await action_task
             logger.info("Relay state: {}".format(action))
+            await send_to_console
 
             # FINISHED ACTION: sleep then update settings
 
@@ -577,6 +591,13 @@ def main():
     async def root():
         device_id = thermostat.device_id
         return device_id
+
+    @app.websocket("/ws")
+    async def websocket_endpoint(websocket: WebSocket):
+        await websocket.accept()
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_text(data)
 
     def run_thermostat():
         asyncio.run(thermostat.loop())
