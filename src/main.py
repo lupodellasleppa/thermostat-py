@@ -10,8 +10,11 @@ import signal
 # import socket
 import threading
 import time
+from typing import List
 
-from fastapi import FastAPI, Response, status, WebSocket
+from fastapi import (
+    FastAPI, Response, status, WebSocket, WebSocketDisconnect
+)
 from fastapi.middleware.cors import CORSMiddleware
 from iottly_sdk import IottlySDK
 import uvicorn
@@ -25,6 +28,25 @@ from settings_handler import SettingsHandler
 from thermometer import ThermometerLocal, ThermometerDirect
 from thermostat_pyrebase import PyrebaseInstance
 import util
+
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+
+    async def broadcast(self, message):
+        for connection in self.active_connections:
+            await connection.send_json(message)
 
 
 class Server(uvicorn.Server):
@@ -359,14 +381,6 @@ class Thermostat():
         except Exception as e:
             self.iottly_sdk.send({"error": str(e)})
 
-    async def _send_to_console(self, payload):
-        try:
-            uri = "ws://localhost:8000"
-            async with websockets.connect(uri) as websocket:
-                await websocket.send(payload)
-        except Exception as e:
-            logger.exception(e)
-
     def update_program_target_temperature(self, prev, current, reload):
         if reload:
             # load program
@@ -388,6 +402,15 @@ class Thermostat():
         time_elapsed = 0
         # start loop
         logger.debug("Starting loop. Settings:\n{}".format(self.settings))
+        uri = "ws://localhost:8000/ws"
+        logger.info("Trying to connect")
+        ws_connected = False
+        try:
+            logger.info("Connecting WS...")
+            websocket = await websockets.connect(uri)
+        except OSError:
+            logger.warning("WS not connected.")
+            ws_connected = False
         while not self.exit.is_set():
             # initialize states
             action = False
@@ -433,9 +456,12 @@ class Thermostat():
                     self.stats
                 )
                 # display in attached display
-                send_to_console = asyncio.create_task(
-                    self._sendo_to_console(payload)
-                )
+                if not ws_connected:
+                    websocket = await websockets.connect(uri)
+                    ws_connected = True
+                else:
+                    logger.info("Sending: {}".format(self.stats))
+                    await websocket.send(json.dumps(self.stats))
                 # self.iottly_sdk.call_agent('send_message', payload)
             # log if day_changed
             day_changed = util.check_same_day(
@@ -506,7 +532,6 @@ class Thermostat():
             logger.debug("Just before await of action")
             action = await action_task
             logger.info("Relay state: {}".format(action))
-            await send_to_console
 
             # FINISHED ACTION: sleep then update settings
 
@@ -559,6 +584,8 @@ class Thermostat():
                 self.new_settings = {}
             time_after_sleep = time.perf_counter() - after_sleep
         # raise UnknownException('Exited main loop.')
+        logger.info("Closing WS connection...")
+        await websocket.close()
         logger.info("Shutting down relay...")
         self.relay.off()
         logger.info("Cleaning GPIO...")
@@ -584,20 +611,21 @@ def main():
         allow_headers=["*"],
     )
 
-
     # app.logger = logger
-
-    @app.get('/')
+    @app.get("/")
     async def root():
         device_id = thermostat.device_id
-        return device_id
+        return {"name": "", "uuid": device_id}
+
+    manager = ConnectionManager()
 
     @app.websocket("/ws")
     async def websocket_endpoint(websocket: WebSocket):
-        await websocket.accept()
+        await manager.connect(websocket)
         while True:
             data = await websocket.receive_text()
-            await websocket.send_text(data)
+            data = json.loads(data)
+            await manager.broadcast(data)
 
     def run_thermostat():
         asyncio.run(thermostat.loop())
