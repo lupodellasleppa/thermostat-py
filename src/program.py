@@ -63,7 +63,7 @@ class Program(object):
 
         # type checks
         try:
-            program_number = str(int(program_number))
+            program_number = str(program_number)
         except ValueError:
             raise ValueError("Argument 'program_number' should be an integer.")
         try:
