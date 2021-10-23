@@ -1,12 +1,16 @@
 #!/usr/bin/python3
 
-import asyncio
 import json
 import logging
 import os
 import socket
 
-from exceptions import *
+from exceptions import (
+    InvalidSettingsException,
+    ThermometerDirectException,
+    ThermometerLocalException,
+    ThermometerLocalTimeout,
+)
 
 
 class ConfigurationError(BaseException):
@@ -32,7 +36,11 @@ class ThermometerLocal():
 
     async def _parse_temperatures(self, data, measure):
         """Async json.loads wrapper for async temperature request"""
-        temperature = json.loads(data)
+        try:
+            temperature = json.loads(data)
+        except json.decoder.JSONDecodeError:
+            raise ThermometerLocalException
+
         return temperature[measure]
 
     async def request_temperatures(self):
@@ -46,6 +54,7 @@ class ThermometerLocal():
         temperature = await self._parse_temperatures(
             request.decode(), 'celsius'
         )
+
         return temperature
 
 
@@ -54,6 +63,7 @@ class ThermometerDirect():
     For future implementation of temperature sensor
     directly attached to RaspberryPi
     """
+
     def __init__(self):
         if not self.check_pin_configuration():
             raise ConfigurationError(
@@ -66,6 +76,7 @@ class ThermometerDirect():
             config = f.readlines()
         # check there's a line beginning with dtoverlay=w1-gpio
         if any([x.strip().startswith('dtoverlay=w1-gpio') for x in config]):
+
             return True
 
     async def request_temperatures(self):
@@ -83,4 +94,5 @@ class ThermometerDirect():
                 ) / 1000
             except IndexError as e:
                 raise ThermometerDirectException(e)
+
         return temperature

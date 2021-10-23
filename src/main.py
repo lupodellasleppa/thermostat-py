@@ -47,6 +47,7 @@ def _retrieve_iottly_info(iottly_path):
 
 # iottlySDK functions
 
+
 def on_agent_status_changed(status):
     logger.warning('iottly agent status: {}'.format(status))
 
@@ -94,7 +95,6 @@ def _init_thermometer(settings, intervals):
     if settings['direct']:
         return ThermometerDirect()
     else:
-        thermometer_ip, thermometer_port = settings["configs"]
         return ThermometerLocal(
             settings["UDP_IP"],
             settings["UDP_port"],
@@ -102,6 +102,7 @@ def _init_thermometer(settings, intervals):
         )
 
 # settings file interfacing
+
 
 def _load_settings(settings_handler):
     """
@@ -132,15 +133,16 @@ def _load_settings(settings_handler):
 
 # action
 
+
 async def _handle_on_and_off(
-        current,
-        relay,
-        manual,
-        auto,
-        program_target_temperature,
-        desired_temp,
-        room_temperature
-    ):
+            current,
+            relay,
+            manual,
+            auto,
+            program_target_temperature,
+            desired_temp,
+            room_temperature
+        ):
     """Handles all there is to turning the heater on or off.
     NOTE: relay module writes relay state to settings_file
     at every call of on() or off() methods.
@@ -191,16 +193,16 @@ def _auto_mode(
     room_temperature
 ):
     ### TURN ON CASE
-    if (# Value in program is bool
+    if (  # Value in program is bool
         (
-            program_target_temperature is True and
-            room_temperature < desired_temp
+            program_target_temperature is True
+            and room_temperature < desired_temp
         )
-        or
+
         # value in program is float
-        (
-            util.is_number(program_target_temperature) and
-            room_temperature < program_target_temperature
+        or (
+            util.is_number(program_target_temperature)
+            and room_temperature < program_target_temperature
         )
     ):
         if not relay.stats:
@@ -210,6 +212,7 @@ def _auto_mode(
     ### TURN OFF CASE
     else:
         return relay.off()
+
 
 # main
 
@@ -387,9 +390,9 @@ class Thermostat():
             last_settings = {
                 k: v for k, v in self.settings.items()
             }
-            if not "program_target_temperature" in last_settings.keys():
+            if "program_target_temperature" not in last_settings.keys():
                 # to compute differences at the first run
-                 # when we don't have this key yet
+                # when we don't have this key yet
                 last_settings.update(
                     {"program_target_temperature": None}
                 )
@@ -437,8 +440,12 @@ class Thermostat():
                     temperature = await request_temperatures
                 # if no value for room_temperature and read from thermometer
                 # fails, retry endlessly without taking any other action
-                except (ThermometerLocalTimeout, ThermometerDirectException):
-                    time.sleep(intervals["settings"])
+                except (
+                    ThermometerLocalException,
+                    ThermometerLocalTimeout,
+                    ThermometerDirectException
+                ):
+                    self.settings["intervals"]["settings"]
                     continue
             # stop for given time in settings_file when relay_state changes
             if diff_settings["relay_state"]:
@@ -464,14 +471,14 @@ class Thermostat():
                 ))
             # retrieve new_settings from UI and loop and write them to file
             logger.debug("Just before await of temp")
-            try: # TODO: multiple sensors logic
+            try:  # TODO: multiple sensors logic
                 received_temperature = await request_temperatures
                 logger.info(
                     "Received temperature: {}".format(received_temperature)
                 )
                 if (
-                    received_temperature !=
-                    self.settings["room_temperature"]
+                    received_temperature
+                    != self.settings["room_temperature"]
                 ):
                     self.new_settings.update(
                         {"temperatures": {"room": received_temperature}}
@@ -493,8 +500,8 @@ class Thermostat():
             # X - time spent until now
             # otherwise we will sleep for more than X
             time_to_sleep = (
-                self.settings["intervals"]["settings"] -
-                (time.perf_counter() - start)
+                self.settings["intervals"]["settings"]
+                - (time.perf_counter() - start)
             )
             time.sleep(max(0, time_to_sleep - time_after_sleep))
             after_sleep = time.perf_counter()
@@ -605,11 +612,12 @@ def main():
     try:
         # start the flask server for local APIs
         thermostat_loop.start()
-        app.run(host="0.0.0.0") # security first
+        app.run(host="0.0.0.0")  # security first
     except Exception as e:
         thermostat.relay.clean()
         logger.exception(e)
         raise UnknownException(e)
+
 
 if __name__ == '__main__':
     main()
