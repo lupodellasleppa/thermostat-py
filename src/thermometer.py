@@ -36,24 +36,26 @@ class ThermometerLocal():
 
     async def _parse_temperatures(self, data, measure):
         """Async json.loads wrapper for async temperature request"""
-        try:
-            temperature = json.loads(data)
-        except json.decoder.JSONDecodeError:
-            raise ThermometerLocalException
+        temperature = json.loads(data)
 
         return temperature[measure]
 
     async def request_temperatures(self):
         """Async request of temperatures"""
         self.thermometer.sendto(b'temps_req', (self.ip, self.port))
+
         try:
             request = self.thermometer.recv(4096)
             logging.info("Requesting temperatures...")
         except socket.timeout:
             raise ThermometerLocalTimeout
-        temperature = await self._parse_temperatures(
-            request.decode(), 'celsius'
-        )
+
+        try:
+            temperature = await self._parse_temperatures(
+                request.decode(), 'celsius'
+            )
+        except (json.decoder.JSONDecodeError, KeyError):
+            raise ThermometerLocalException
 
         return temperature
 
