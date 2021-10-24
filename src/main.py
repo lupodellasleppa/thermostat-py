@@ -483,7 +483,10 @@ class Thermostat():
                     self.new_settings.update(
                         {"temperatures": {"room": received_temperature}}
                     )
-            except ThermometerLocalTimeout as e:
+            except (
+                ThermometerLocalException,
+                ThermometerLocalTimeout
+            ) as e:
                 logger.warning(
                     "Could not retrieve temperatures from themometer."
                 )
