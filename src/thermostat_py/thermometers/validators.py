@@ -2,7 +2,7 @@ from enum import Enum
 from ipaddress import IPv4Address
 from typing import Union
 
-from pydantic import BaseModel, AnyUrl
+from pydantic import AnyUrl, BaseModel, validator
 
 
 class ThermometerTypeEnum(str, Enum):
@@ -15,7 +15,7 @@ class ThermometerModel(BaseModel):
     description: str = None
     read_period: int
     thermometer_type: str
-    target_temperature: int
+    target_temperature: int = None
 
 
 class ThermometerWiredModel(ThermometerModel):
@@ -27,3 +27,7 @@ class ThermometerWirelessModel(ThermometerModel):
     port: int
     send_period: int
     timeout: int
+
+    @validator("host")
+    def ip_to_string(cls, value):
+        return str(value)

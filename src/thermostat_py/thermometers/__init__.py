@@ -1,11 +1,12 @@
-from .validators import (
-    ThermometerModel,
-    ThermometerWiredModel,
-    ThermometerWirelessModel
-)
+from .validators import ThermometerWiredModel, ThermometerWirelessModel
 
 
 class Thermometer():
+    @classmethod
+    def validate(cls, value):
+
+        return cls.validator(**value)
+
     def __init__(
         self,
         name,
@@ -18,21 +19,53 @@ class Thermometer():
         self.description = description
         self.type = type
 
+    def __repr__(self):
+        return str(self.__dict__)
 
-class ThemometerWireless(Thermometer):
-    def __init__(self, host, port, send_period, timeout):
-        super().__init__()
+
+class ThermometerWired(Thermometer):
+    validator = ThermometerWiredModel
+
+    def __init__(
+        self,
+        name,
+        description,
+        read_period,
+        thermometer_type,
+        target_temperature
+    ):
+        super().__init__(
+            name,
+            description,
+            read_period,
+            thermometer_type,
+            target_temperature
+        )
+
+
+class ThermometerWireless(Thermometer):
+    validator = ThermometerWirelessModel
+
+    def __init__(
+        self,
+        name,
+        description,
+        host,
+        port,
+        send_period,
+        timeout,
+        read_period,
+        thermometer_type,
+        target_temperature
+    ):
+        super().__init__(
+            name,
+            description,
+            read_period,
+            thermometer_type,
+            target_temperature
+        )
         self.host = host
         self.port = port
         self.send_period = send_period
         self.timeout = timeout
-
-
-class ThermometerWired(Thermometer):
-    def __init__(self, host, port):
-        pass
-
-
-class ThermometerManager():
-    def __init__(self):
-        self.thermometers = {}

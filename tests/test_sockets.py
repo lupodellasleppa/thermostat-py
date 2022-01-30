@@ -3,7 +3,8 @@ import time
 
 import pytest
 
-from thermostat_py.sockets import Publisher, SocketsManager, Subscriber
+from thermostat_py.sockets import Publisher, Subscriber
+from thermostat_py.managers import SocketsManager
 
 
 logger = logging.getLogger("test_sockets")
@@ -79,12 +80,12 @@ def test_socket_manager(publisher, socket_manager, subscriber):
     sm.add("publisher", publisher_values)
     sm.add("subscriber", subscriber_values)
 
-    for name, publisher in sm.publishers.items():
-        logger.info("Publisher: {}".format(publisher))
-        assert isinstance(publisher, Publisher)
-    for name, subscriber in sm.subscribers.items():
-        logger.info("Subscriber: {}".format(subscriber))
-        assert isinstance(subscriber, Subscriber)
+    for name, p in sm.publishers.items():
+        logger.info("Publisher: {}".format(p))
+        assert isinstance(p, Publisher)
+    for name, s in sm.subscribers.items():
+        logger.info("Subscriber: {}".format(s))
+        assert isinstance(s, Subscriber)
 
     sm.remove("publisher", publisher_values["name"])
     sm.remove("subscriber", subscriber_values["name"])
