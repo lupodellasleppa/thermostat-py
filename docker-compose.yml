@@ -1,0 +1,14 @@
+version: "3.7"
+services:
+
+  edge-device:
+    image: "lukechilds/dockerpi:vm"
+    ports:
+      - "5022:5022"
+    volumes:
+      - type: "bind"
+        source: "./dockerpi/edge-device.img"
+        target: "/sdcard/filesystem.img"
+        read_only: false
+    sysctls:
+      - net.ipv4.ping_group_range=0 2147483647
