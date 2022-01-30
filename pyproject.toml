@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "thermostat-py"
+version = "0.1.0"
+description = ""
+authors = ["Yoske Apolloni <lupodellasleppa@gmail.com>"]
+license = "GNU General Public License v3.0"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+esptool = "^3.1"
+fastapi = {extras = ["all"], version = "^0.70.0"}
+pytest = "^6.2.5"
+pyzmq = "^22.3.0"
+atomicwrites = "^1.4.0"
+pydantic = "^1.9.0"
+
+[tool.poetry.dev-dependencies]
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+testpaths = [
+    "tests",
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
